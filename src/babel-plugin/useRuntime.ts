@@ -1,15 +1,9 @@
 import * as t from '@babel/types'
-import { namespaceName } from './constants'
+import {toNamedImport} from './constants'
 
 export function apiFunctionCallExpression(
 	functionName: string,
 	args: t.Expression[]
 ) {
-	return t.callExpression(
-		t.memberExpression(
-			t.identifier(namespaceName),
-			t.identifier(functionName)
-		),
-		args
-	)
+	return t.callExpression(t.identifier(toNamedImport(functionName)), args)
 }

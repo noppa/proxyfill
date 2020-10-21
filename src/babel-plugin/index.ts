@@ -3,11 +3,21 @@ import MemberExpression from './memberExpression'
 import type * as Babel from '@babel/core'
 import * as t from '@babel/types'
 import template from '@babel/template'
-import { VisitorState } from './types'
-import { namespaceName } from './constants'
+import {VisitorState} from './types'
+import {toNamedImport} from './constants'
+
+import * as runtime from '../runtime'
+
+const runtimeApiFunctionNames = Object.keys(runtime).filter(
+	(name) => name !== '__esModule'
+)
 
 const importTemplate = template(`
-  import * as IMPORT_NAME from 'SOURCE'
+  import {
+		${runtimeApiFunctionNames
+			.map((name) => `${name} as ${toNamedImport(name)}`)
+			.join(', ')}
+	} from 'proxyfill/runtime'
 `)
 
 export default function babelPluginProxyfill(): Babel.PluginObj<VisitorState> {
@@ -15,10 +25,7 @@ export default function babelPluginProxyfill(): Babel.PluginObj<VisitorState> {
 		name: 'proxyfill',
 		visitor: {
 			Program(path) {
-				const importRuntime = importTemplate({
-					IMPORT_NAME: t.identifier(namespaceName),
-					SOURCE: t.stringLiteral('proxyfill/runtime'),
-				})
+				const importRuntime = importTemplate()
 				path.unshiftContainer('body', importRuntime)
 			},
 			MemberExpression,
