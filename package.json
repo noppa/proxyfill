@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "dependencies": {
+    "@babel/template": "^7.10.4",
     "@babel/types": "^7.12.1",
     "typescript": "^4.0.3"
   },
