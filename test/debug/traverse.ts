@@ -1,18 +1,18 @@
 // This file is for quick & dirty
 // interactive development of the plugin.
-import { parse } from '@babel/parser'
+import {parse} from '@babel/parser'
 import generate from '@babel/generator'
 import babelTraverse from '@babel/traverse'
 
 import proxyfill from '../../src/index'
-import { VisitorState } from '../../src/babel-plugin/types'
+import {VisitorState} from '../../src/babel-plugin/types'
 
 const traverse = proxyfill()
 
 const code = `
   function test(a) {
-    return a.b(a.c)
-  }
+    foo.bar = a.b(a.c)
+	}
 `
 
 const ast = parse(code, {
@@ -21,9 +21,7 @@ const ast = parse(code, {
 })
 
 setTimeout(() => {
-	babelTraverse<VisitorState>(ast, traverse.visitor, undefined, {
-		hasBeenImported: new Map(),
-	})
+	babelTraverse<VisitorState>(ast, traverse.visitor, undefined, {})
 	const newCode = generate(ast)
 	console.log(newCode.code)
 }, 500)

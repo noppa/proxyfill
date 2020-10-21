@@ -1,7 +1,7 @@
 import MemberExpression from './memberExpression'
+import AssignmentExpression from './assignmentExpression'
 
 import type * as Babel from '@babel/core'
-import * as t from '@babel/types'
 import template from '@babel/template'
 import {VisitorState} from './types'
 import {toNamedImport} from './constants'
@@ -29,6 +29,7 @@ export default function babelPluginProxyfill(): Babel.PluginObj<VisitorState> {
 				path.unshiftContainer('body', importRuntime)
 			},
 			MemberExpression,
+			AssignmentExpression,
 		},
 	}
 }

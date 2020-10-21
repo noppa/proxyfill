@@ -1,5 +1,1 @@
-type FilePath = string
-
-export type VisitorState = {
-	hasBeenImported: Map<FilePath, boolean>
-}
+export type VisitorState = Record<string, unknown>
