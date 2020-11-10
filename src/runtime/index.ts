@@ -23,21 +23,21 @@ const assign = Object.assign
 const shallowClone = <T extends Record<string, any>>(obj: T): T =>
 	assign({}, obj)
 
+type ProxyfillPrivateApi = {
+	target: object
+	handler: ProxyHandler<object>
+	revoked: boolean
+}
 type ProxyPrivateApiContainer = {
-	__proxyfill: {
-		target: object
-		handler: ProxyHandler<object>
-		revokable: boolean
-	}
+	__proxyfill: ProxyfillPrivateApi
 }
 
 function createProxy(
 	// eslint-disable-next-line @typescript-eslint/ban-types
 	target: object,
 	// eslint-disable-next-line @typescript-eslint/ban-types
-	handler: ProxyHandler<object>,
-	revokable: boolean
-) {
+	handler: ProxyHandler<object>
+): ProxyPrivateApiContainer {
 	if (!isObject(target) || !isObject(handler)) {
 		throw new TypeError(
 			'Cannot create proxy with a non-object as target or handler'
@@ -48,7 +48,7 @@ function createProxy(
 		__proxyfill: {
 			target,
 			handler: shallowClone(handler),
-			revokable,
+			revoked: false,
 		},
 	}
 
@@ -83,12 +83,9 @@ function createProxy(
 
 	return proxy
 }
-
 type PossiblyProxy = null | undefined | Partial<ProxyPrivateApiContainer>
 
-function getProxyfillApi(
-	obj: PossiblyProxy
-): null | ProxyPrivateApiContainer['__proxyfill'] {
+function getProxyfillApi(obj: PossiblyProxy): null | ProxyfillPrivateApi {
 	const type = typeof obj
 	return (
 		(((type === 'object' && obj !== null) || type === 'function') &&
@@ -96,6 +93,18 @@ function getProxyfillApi(
 			obj!.__proxyfill) ||
 		null
 	)
+}
+
+function assertNotRevoked(api: ProxyfillPrivateApi, op: string) {
+	if (api.revoked) {
+		throw new Error(`Cannot perform ${op} on a proxy that has been revoked`)
+	}
+}
+
+function assertNotPrivateApiProp(property: string) {
+	if (property === privateApiKey) {
+		throw new Error('Cannot access private API of proxyfill library')
+	}
 }
 
 export function isNotProxy(obj: PossiblyProxy) {
@@ -115,13 +124,13 @@ const privateApiKey: keyof ProxyPrivateApiContainer = '__proxyfill'
 export function get(
 	obj: PossiblyProxy,
 	property: string,
+	dynamicProp: boolean,
 	notProxy: boolean
 ): any {
-	if (property === privateApiKey) {
-		throw new Error('Cannot access private API of proxyfill library')
-	}
+	if (dynamicProp) assertNotPrivateApiProp(property)
 	const api = !notProxy && getProxyfillApi(obj)
 	if (api) {
+		assertNotRevoked(api, 'get')
 		const handlers = api.handler
 		const getHandler = handlers.get
 		if (getHandler) {
@@ -136,13 +145,13 @@ export function set(
 	obj: PossiblyProxy,
 	property: string,
 	value: any,
+	dynamicProp: boolean,
 	notProxy: boolean
 ): any {
-	if (property === privateApiKey) {
-		throw new Error('Cannot access private API of proxyfill library')
-	}
+	if (dynamicProp) assertNotPrivateApiProp(property)
 	const api = !notProxy && getProxyfillApi(obj)
 	if (api) {
+		assertNotRevoked(api, 'set')
 		const handlers = api.handler
 		const setHandler = handlers.set
 		if (setHandler) {
@@ -163,12 +172,16 @@ export function ProxyPolyfill(
 		throw new TypeError("Constructor Proxy requires 'new'")
 	}
 
-	return createProxy(target, handler, false)
+	return createProxy(target, handler)
 }
 
 ProxyPolyfill.revocable = function (
 	target: object,
 	handler: ProxyHandler<object>
 ) {
-	return createProxy(target, handler, true)
+	const proxy = createProxy(target, handler)
+	function revoke() {
+		proxy.__proxyfill.revoked = true
+	}
+	return {proxy, revoke}
 }
