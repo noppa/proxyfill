@@ -1,6 +1,6 @@
 import * as t from '@babel/types'
 import {NodePath} from '@babel/traverse'
-import {apiFunctionCallExpression} from './useRuntime'
+import {callGet} from './useRuntime'
 
 export default function MemberExpression(path: NodePath<t.MemberExpression>) {
 	const {object, property} = path.node
@@ -8,13 +8,7 @@ export default function MemberExpression(path: NodePath<t.MemberExpression>) {
 		// We can't pass #foo from this.#foo as a function argument.
 		return
 	}
-	const propertyNormalized = t.isIdentifier(property)
-		? t.stringLiteral(property.name)
-		: property
 
-	const getter = apiFunctionCallExpression('get', [
-		object,
-		propertyNormalized,
-	])
+	const getter = callGet(object, property, false)
 	path.replaceWith(getter)
 }

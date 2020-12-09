@@ -9,6 +9,10 @@
  * fit into the code style and goals of this project.
  */
 
+import {assertNotPrivateApiProp} from './assertNotPrivateApiProp'
+import {CompileTimeAssertions} from './CompileTimeAssertions'
+import type {ProxyPrivateApiContainer, ProxyfillPrivateApi} from './constants'
+
 /* eslint-disable prefer-rest-params */
 /* eslint-disable @typescript-eslint/ban-types */
 
@@ -22,15 +26,6 @@ const slice = [].slice
 const assign = Object.assign
 const shallowClone = <T extends Record<string, any>>(obj: T): T =>
 	assign({}, obj)
-
-type ProxyfillPrivateApi = {
-	target: object
-	handler: ProxyHandler<object>
-	revoked: boolean
-}
-type ProxyPrivateApiContainer = {
-	__proxyfill: ProxyfillPrivateApi
-}
 
 function createProxy(
 	// eslint-disable-next-line @typescript-eslint/ban-types
@@ -55,7 +50,7 @@ function createProxy(
 	let proxy: any
 	if (typeof target === 'function') {
 		proxy = function ProxyPolyfill(this: any) {
-			const usingNew = this && this.constructor === proxy
+			const usingNew = !!this && this.constructor === proxy
 			const args: any[] = slice.call(arguments)
 
 			if (usingNew && handler.construct) {
@@ -68,8 +63,11 @@ function createProxy(
 			if (usingNew) {
 				// inspired by answers to https://stackoverflow.com/q/1606797
 				args.unshift(target)
-				const f = bind.apply<Function, any, any>(target, args)
-				return new f()
+				const ProxyTargetConstructor = bind.apply<Function, any, any>(
+					target,
+					args
+				)
+				return new ProxyTargetConstructor()
 			}
 			return target.apply(this, args)
 		}
@@ -101,17 +99,9 @@ function assertNotRevoked(api: ProxyfillPrivateApi, op: string) {
 	}
 }
 
-function assertNotPrivateApiProp(property: string) {
-	if (property === privateApiKey) {
-		throw new Error('Cannot access private API of proxyfill library')
-	}
-}
-
 export function isNotProxy(obj: PossiblyProxy) {
 	return !getProxyfillApi(obj)
 }
-
-const privateApiKey: keyof ProxyPrivateApiContainer = '__proxyfill'
 
 /**
  *
@@ -123,33 +113,55 @@ const privateApiKey: keyof ProxyPrivateApiContainer = '__proxyfill'
  */
 export function get(
 	obj: PossiblyProxy,
-	property: string,
-	dynamicProp: boolean,
-	notProxy: boolean
+	property: unknown,
+	assertions: CompileTimeAssertions
 ): any {
-	if (dynamicProp) assertNotPrivateApiProp(property)
-	const api = !notProxy && getProxyfillApi(obj)
+	if (
+		(assertions & CompileTimeAssertions.PropertyIsIdentifier) !==
+		CompileTimeAssertions.PropertyIsIdentifier
+	) {
+		assertNotPrivateApiProp(property)
+	}
+
+	const api: null | ProxyfillPrivateApi =
+		(assertions & CompileTimeAssertions.PropertyIsNotProxy) !==
+		CompileTimeAssertions.PropertyIsNotProxy
+			? getProxyfillApi(obj)
+			: null
+
 	if (api) {
 		assertNotRevoked(api, 'get')
 		const handlers = api.handler
 		const getHandler = handlers.get
 		if (getHandler) {
-			return getHandler.call(handlers, api.target, property, obj)
+			return getHandler.call(handlers, api.target, property as any, obj)
 		}
 	}
 
-	return (obj as any)[property]
+	return (obj as any)[property as any]
 }
+
+export type ProxyfillRuntimeGet = typeof get
 
 export function set(
 	obj: PossiblyProxy,
 	property: string,
 	value: any,
-	dynamicProp: boolean,
-	notProxy: boolean
+	assertions: CompileTimeAssertions
 ): any {
-	if (dynamicProp) assertNotPrivateApiProp(property)
-	const api = !notProxy && getProxyfillApi(obj)
+	if (
+		(assertions & CompileTimeAssertions.PropertyIsIdentifier) !==
+		CompileTimeAssertions.PropertyIsIdentifier
+	) {
+		assertNotPrivateApiProp(property)
+	}
+
+	const api: null | ProxyfillPrivateApi =
+		(assertions & CompileTimeAssertions.PropertyIsNotProxy) !==
+		CompileTimeAssertions.PropertyIsNotProxy
+			? getProxyfillApi(obj)
+			: null
+
 	if (api) {
 		assertNotRevoked(api, 'set')
 		const handlers = api.handler
@@ -161,6 +173,8 @@ export function set(
 
 	return ((obj as any)[property] = value)
 }
+
+export type ProxyfillRuntimeSet = typeof set
 
 export function ProxyPolyfill(
 	this: any,

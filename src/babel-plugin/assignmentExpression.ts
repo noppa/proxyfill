@@ -1,6 +1,6 @@
 import * as t from '@babel/types'
 import {NodePath} from '@babel/traverse'
-import {apiFunctionCallExpression} from './useRuntime'
+import {callSet} from './useRuntime'
 
 export default function AssignmentExpression(
 	path: NodePath<t.AssignmentExpression>
@@ -14,14 +14,6 @@ export default function AssignmentExpression(
 	if (t.isPrivateName(property)) {
 		return
 	}
-	const propertyNormalized = t.isIdentifier(property)
-		? t.stringLiteral(property.name)
-		: property
-
-	const getter = apiFunctionCallExpression('set', [
-		object,
-		propertyNormalized,
-		path.get('right').node,
-	])
-	path.replaceWith(getter)
+	const setter = callSet(object, property, path.get('right').node)
+	path.replaceWith(setter)
 }
