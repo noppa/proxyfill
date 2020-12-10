@@ -10,7 +10,6 @@
  */
 
 import {assertNotPrivateApiProp} from './assertNotPrivateApiProp'
-import {CompileTimeAssertions} from './CompileTimeAssertions'
 import type {ProxyPrivateApiContainer, ProxyfillPrivateApi} from './constants'
 
 /* eslint-disable prefer-rest-params */
@@ -111,23 +110,10 @@ export function isNotProxy(obj: PossiblyProxy) {
  * 		to skip the proxy check in places where properties of a constant object are accessed
  * 		multiple times.
  */
-export function get(
-	obj: PossiblyProxy,
-	property: unknown,
-	assertions: CompileTimeAssertions
-): any {
-	if (
-		(assertions & CompileTimeAssertions.PropertyIsIdentifier) !==
-		CompileTimeAssertions.PropertyIsIdentifier
-	) {
-		assertNotPrivateApiProp(property)
-	}
+export function get(obj: PossiblyProxy, property: unknown): any {
+	assertNotPrivateApiProp(property)
 
-	const api: null | ProxyfillPrivateApi =
-		(assertions & CompileTimeAssertions.PropertyIsNotProxy) !==
-		CompileTimeAssertions.PropertyIsNotProxy
-			? getProxyfillApi(obj)
-			: null
+	const api = getProxyfillApi(obj)
 
 	if (api) {
 		assertNotRevoked(api, 'get')
@@ -143,24 +129,10 @@ export function get(
 
 export type ProxyfillRuntimeGet = typeof get
 
-export function set(
-	obj: PossiblyProxy,
-	property: string,
-	value: any,
-	assertions: CompileTimeAssertions
-): any {
-	if (
-		(assertions & CompileTimeAssertions.PropertyIsIdentifier) !==
-		CompileTimeAssertions.PropertyIsIdentifier
-	) {
-		assertNotPrivateApiProp(property)
-	}
+export function set(obj: PossiblyProxy, property: string, value: any): any {
+	assertNotPrivateApiProp(property)
 
-	const api: null | ProxyfillPrivateApi =
-		(assertions & CompileTimeAssertions.PropertyIsNotProxy) !==
-		CompileTimeAssertions.PropertyIsNotProxy
-			? getProxyfillApi(obj)
-			: null
+	const api = getProxyfillApi(obj)
 
 	if (api) {
 		assertNotRevoked(api, 'set')

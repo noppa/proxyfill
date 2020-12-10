@@ -9,6 +9,6 @@ export default function MemberExpression(path: NodePath<t.MemberExpression>) {
 		return
 	}
 
-	const getter = callGet(object, property, false)
+	const getter = callGet(object, property)
 	path.replaceWith(getter)
 }
