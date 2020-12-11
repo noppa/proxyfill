@@ -1,11 +1,12 @@
 {
-  "eslint.workingDirectories": [
-    {
-      "mode": "auto"
-    }
-  ],
-  "editor.formatOnSave": true,
-  "editor.codeActionsOnSave": {
-    "source.fixAll": true
-  }
+	"eslint.workingDirectories": [
+		{
+			"mode": "auto"
+		}
+	],
+	"editor.formatOnSave": true,
+	"editor.defaultFormatter": "prettier",
+	"editor.codeActionsOnSave": {
+		"source.fixAll": true
+	}
 }
