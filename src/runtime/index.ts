@@ -20,9 +20,10 @@ function isObject(val: unknown) {
 	const t = typeof val
 	return t === 'object' || t === 'function'
 }
-const bind = isObject.bind
-const slice = [].slice
-const assign = Object.assign
+const {bind, apply} = isObject
+const {slice} = []
+const {assign, defineProperty} = Object
+
 const shallowClone = <T extends Record<string, any>>(obj: T): T =>
 	assign({}, obj)
 
@@ -78,6 +79,41 @@ function createProxy(
 		proxy = proxyPrivateApi
 	}
 
+	// Install top-level getter traps for symbols & methods
+	// that the ES runtime might call automatically, for example
+	// to convert the value to a number with `+foo`.
+	let runtimeTraps: (string | symbol)[]
+	const _Symbol = typeof Symbol !== 'undefined' && Symbol
+	if (_Symbol) {
+		// Spec: Well-known Symbols
+		// https://www.ecma-international.org/ecma-262/11.0/index.html#table-1
+		runtimeTraps = [
+			_Symbol.asyncIterator,
+			_Symbol.hasInstance,
+			_Symbol.isConcatSpreadable,
+			_Symbol.iterator,
+			_Symbol.match,
+			_Symbol.matchAll,
+			_Symbol.replace,
+			_Symbol.search,
+			_Symbol.species,
+			_Symbol.split,
+			_Symbol.toPrimitive,
+			_Symbol.toStringTag,
+			_Symbol.unscopables,
+		].filter(Boolean)
+	} else {
+		runtimeTraps = []
+	}
+	runtimeTraps.push('valueOf', 'toString')
+
+	for (let i = 0; i < runtimeTraps.length; i++) {
+		const trap = runtimeTraps[i]
+		defineProperty(proxy, trap, {
+			get: () => get(proxy, trap),
+		})
+	}
+
 	return proxy
 }
 type PossiblyProxy = null | undefined | Partial<ProxyPrivateApiContainer>
@@ -110,7 +146,7 @@ export function isNotProxy(obj: PossiblyProxy) {
  * 		to skip the proxy check in places where properties of a constant object are accessed
  * 		multiple times.
  */
-export function get(obj: PossiblyProxy, property: unknown): any {
+export function get(obj: PossiblyProxy, property: unknown): unknown {
 	assertNotPrivateApiProp(property)
 
 	const api = getProxyfillApi(obj)
@@ -127,9 +163,43 @@ export function get(obj: PossiblyProxy, property: unknown): any {
 	return (obj as any)[property as any]
 }
 
-export type ProxyfillRuntimeGet = typeof get
+export function invoke(
+	obj: PossiblyProxy,
+	property: unknown,
+	args: unknown[]
+): unknown {
+	const fn: any = get(obj, property)
+	if (typeof fn !== 'function') {
+		throw new TypeError(`${property} is not a function`)
+	}
+	return apply.call(fn, obj, args)
+}
 
-export function set(obj: PossiblyProxy, property: string, value: any): any {
+// Spec: https://www.ecma-international.org/ecma-262/11.0/index.html#sec-toprimitive
+// function toPrimitive(
+// 	this: ProxyPrivateApiContainer,
+// 	hint: 'string' | 'number' | 'default'
+// ) {
+// 	const targetToPrimitive = get(this, 'toPrimitive') as AnyFunction | void
+// 	if (typeof targetToPrimitive !== 'undefined') {
+// 		return call.call(targetToPrimitive, this, hint)
+// 	}
+// 	if (hint === 'default') hint = 'number'
+// 	const methodNames: (keyof Object)[] =
+// 		hint === 'string' ? ['toString', 'valueOf'] : ['valueOf', 'toString']
+// 	for (let i = 0; i < 2; i++) {
+// 		const targetFn = get(this, methodNames[i])
+// 		if (typeof targetFn === 'function') {
+// 			const res = call.call(targetFn as AnyFunction, this)
+// 		}
+// 	}
+// }
+
+export function set(
+	obj: PossiblyProxy,
+	property: string,
+	value: unknown
+): unknown {
 	assertNotPrivateApiProp(property)
 
 	const api = getProxyfillApi(obj)
@@ -145,8 +215,6 @@ export function set(obj: PossiblyProxy, property: string, value: any): any {
 
 	return ((obj as any)[property] = value)
 }
-
-export type ProxyfillRuntimeSet = typeof set
 
 export function ProxyPolyfill(
 	this: any,
