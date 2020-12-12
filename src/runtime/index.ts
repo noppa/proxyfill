@@ -134,10 +134,6 @@ function assertNotRevoked(api: ProxyfillPrivateApi, op: string) {
 	}
 }
 
-export function isNotProxy(obj: PossiblyProxy) {
-	return !getProxyfillApi(obj)
-}
-
 /**
  *
  * @param obj Target object to get a value from, possibly a "Proxy" created with createProxy.

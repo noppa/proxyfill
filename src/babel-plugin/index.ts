@@ -6,10 +6,15 @@ import type * as Babel from '@babel/core'
 import template from '@babel/template'
 import {VisitorState} from './types'
 import {toNamedImport} from './constants'
+import {RuntimeFunctions} from '../runtime'
 
-import * as runtime from '../runtime'
+const runtimeFunctionsMap: {[k in keyof RuntimeFunctions]: 0} = {
+	get: 0,
+	set: 0,
+	invoke: 0,
+}
 
-const runtimeApiFunctionNames = Object.keys(runtime).filter(
+const runtimeApiFunctionNames = Object.keys(runtimeFunctionsMap).filter(
 	(name) => name !== '__esModule'
 )
 

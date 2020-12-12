@@ -1,0 +1,12 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`proxyfill Babel plugin should transform getters 1`] = `
+"import {
+    get as _proxyfillRuntime$get,
+    set as _proxyfillRuntime$set,
+    invoke as _proxyfillRuntime$invoke,
+} from 'proxyfill/runtime'
+
+_proxyfillRuntime$get(foo, bar)
+"
+`;
