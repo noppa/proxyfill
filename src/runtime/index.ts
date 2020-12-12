@@ -216,6 +216,12 @@ export function set(
 	return ((obj as any)[property] = value)
 }
 
+export type RuntimeFunctions = {
+	get: typeof get
+	invoke: typeof invoke
+	set: typeof set
+}
+
 export function ProxyPolyfill(
 	this: any,
 	target: object,

@@ -1,6 +1,6 @@
 import * as t from '@babel/types'
 import {NodePath} from '@babel/traverse'
-import {callSet} from './useRuntime'
+import {callRuntime} from './useRuntime'
 
 export default function AssignmentExpression(
 	path: NodePath<t.AssignmentExpression>
@@ -14,6 +14,6 @@ export default function AssignmentExpression(
 	if (t.isPrivateName(property)) {
 		return
 	}
-	const setter = callSet(object, property, path.get('right').node)
+	const setter = callRuntime('set', object, property, path.get('right').node)
 	path.replaceWith(setter)
 }

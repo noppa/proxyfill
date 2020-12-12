@@ -1,6 +1,6 @@
 import * as t from '@babel/types'
 import {NodePath} from '@babel/traverse'
-import {callGet} from './useRuntime'
+import {callRuntime} from './useRuntime'
 
 export default function MemberExpression(path: NodePath<t.MemberExpression>) {
 	const {object, property} = path.node
@@ -9,6 +9,6 @@ export default function MemberExpression(path: NodePath<t.MemberExpression>) {
 		return
 	}
 
-	const getter = callGet(object, property)
+	const getter = callRuntime('get', object, property)
 	path.replaceWith(getter)
 }
