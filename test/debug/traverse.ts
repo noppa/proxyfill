@@ -11,7 +11,7 @@ const traverse = proxyfill()
 
 const code = `
   function test(a) {
-    foo.bar = a.b(a.c)
+    foo.bar = obj.a(a.c)
 	}
 `
 
