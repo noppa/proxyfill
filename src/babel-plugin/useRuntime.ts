@@ -3,14 +3,16 @@ import {assertNotPrivateApiProp} from '../runtime/assertNotPrivateApiProp'
 import {toNamedImport} from './constants'
 import type {RuntimeFunctions} from '../runtime'
 
-function assertIdentifierIsNotPrivateApiProp(prop: t.Expression): void {
+export type ParameterExpression = t.Expression | t.SpreadElement
+
+function assertIdentifierIsNotPrivateApiProp(prop: ParameterExpression): void {
 	if (t.isIdentifier(prop)) {
 		assertNotPrivateApiProp(prop.name)
 	}
 }
 
 type ArgsToAnyExpressions<Args extends any[]> = {
-	[K in keyof Args]: t.Expression
+	[K in keyof Args]: ParameterExpression
 } & {
 	length: Args['length']
 } & t.Expression[]
