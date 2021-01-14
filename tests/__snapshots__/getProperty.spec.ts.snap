@@ -7,6 +7,6 @@ exports[`proxyfill Babel plugin should transform getters 1`] = `
     invoke as _proxyfillRuntime$invoke,
 } from 'proxyfill/runtime'
 
-_proxyfillRuntime$get(foo, bar)
+_proxyfillRuntime$get(foo, 'bar')
 "
 `;

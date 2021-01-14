@@ -1,21 +1,12 @@
 import * as t from '@babel/types'
 import {NodePath} from '@babel/traverse'
 import {callRuntime, ParameterExpression} from './useRuntime'
+import {getPropertyOfMember} from './helpers'
 
 export default function CallExpression(path: NodePath<t.CallExpression>) {
-	const calleePath = path.get('callee')
-	if (!calleePath.isMemberExpression()) {
-		// Direct call expressions are already handeled by the runtime Proxy
-		// polyfill function. All we need to care call expressions on object
-		// members, so we can invoke "get" and set the context correctly.
-		return
-	}
-
-	const {object, property} = calleePath.node
-	if (t.isPrivateName(property)) {
-		// We can't pass #foo from this.#foo as a function argument.
-		return
-	}
+	const memberInfo = getPropertyOfMember(path.get('callee'))
+	if (!memberInfo) return
+	const {object, property} = memberInfo
 
 	const args = t.arrayExpression(
 		path.get('arguments').map(
