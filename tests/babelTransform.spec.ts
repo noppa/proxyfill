@@ -13,6 +13,18 @@ describe('proxyfill Babel plugin', () => {
 		`)
 		).toMatchSnapshot()
 	})
+	it('should transform setters', () => {
+		expect(traverse('foo.bar = 42')).toMatchSnapshot()
+	})
+	it('should transform computed setters', () => {
+		expect(
+			traverse(`
+			foo[0] = 42
+			foo[bar] = 42
+			foo[bar.baz] = 42
+		`)
+		).toMatchSnapshot()
+	})
 	it('should transform method calls', () => {
 		expect(traverse('foo.bar()')).toMatchSnapshot()
 	})

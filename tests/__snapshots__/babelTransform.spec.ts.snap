@@ -25,6 +25,21 @@ _proxyfillRuntime$get(foo, _proxyfillRuntime$get(bar, 'baz'))
 "
 `;
 
+exports[`proxyfill Babel plugin should transform computed setters 1`] = `
+"import {
+    get as _proxyfillRuntime$get,
+    set as _proxyfillRuntime$set,
+    invoke as _proxyfillRuntime$invoke,
+} from 'proxyfill/runtime'
+
+_proxyfillRuntime$set(foo, 0, 42)
+
+_proxyfillRuntime$set(foo, bar, 42)
+
+_proxyfillRuntime$set(foo, _proxyfillRuntime$get(bar, 'baz'), 42)
+"
+`;
+
 exports[`proxyfill Babel plugin should transform getters 1`] = `
 "import {
     get as _proxyfillRuntime$get,
@@ -44,5 +59,16 @@ exports[`proxyfill Babel plugin should transform method calls 1`] = `
 } from 'proxyfill/runtime'
 
 _proxyfillRuntime$invoke(foo, 'bar', [])
+"
+`;
+
+exports[`proxyfill Babel plugin should transform setters 1`] = `
+"import {
+    get as _proxyfillRuntime$get,
+    set as _proxyfillRuntime$set,
+    invoke as _proxyfillRuntime$invoke,
+} from 'proxyfill/runtime'
+
+_proxyfillRuntime$set(foo, 'bar', 42)
 "
 `;
