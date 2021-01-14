@@ -45,6 +45,10 @@ function createProxy(
 			handler: shallowClone(handler),
 			revoked: false,
 		},
+		toString: function () {
+			console.log('str')
+			return 'Proxy'
+		},
 	}
 
 	let proxy: any
@@ -105,7 +109,7 @@ function createProxy(
 	} else {
 		runtimeTraps = []
 	}
-	runtimeTraps.push('valueOf', 'toString')
+	// runtimeTraps.push('valueOf', 'toString')
 
 	for (let i = 0; i < runtimeTraps.length; i++) {
 		const trap = runtimeTraps[i]
@@ -143,20 +147,24 @@ function assertNotRevoked(api: ProxyfillPrivateApi, op: string) {
  * 		multiple times.
  */
 export function get(obj: PossiblyProxy, property: unknown): unknown {
-	assertNotPrivateApiProp(property)
+	// assertNotPrivateApiProp(property)
 
-	const api = getProxyfillApi(obj)
+	console.log('get 2', obj)
+	// const api = getProxyfillApi(obj)
+	// console.log(String(get))
 
-	if (api) {
-		assertNotRevoked(api, 'get')
-		const handlers = api.handler
-		const getHandler = handlers.get
-		if (getHandler) {
-			return getHandler.call(handlers, api.target, property as any, obj)
-		}
-	}
+	// if (api) {
+	// 	assertNotRevoked(api, 'get')
+	// 	const handlers = api.handler
+	// 	const getHandler = handlers.get
+	// 	console.log('get', typeof getHandler)
+	// 	// if (getHandler) {
+	// 	// 	return getHandler.call(handlers, api.target, property as any, obj)
+	// 	// }
+	// }
+	// console.log('get 2', obj, property)
 
-	return (obj as any)[property as any]
+	// return (obj as any)[property as any]
 }
 
 export function invoke(
@@ -218,7 +226,12 @@ export type RuntimeFunctions = {
 	set: typeof set
 }
 
-export function Proxy(
+interface IProxy {
+	new (target: object, handler: ProxyHandler<object>): any
+	revocable(target: object, handler: ProxyHandler<object>): any
+}
+
+export const Proxy: IProxy = function Proxy(
 	this: any,
 	target: object,
 	handler: ProxyHandler<object>
@@ -229,7 +242,7 @@ export function Proxy(
 	}
 
 	return createProxy(target, handler)
-}
+} as any
 
 Proxy.revocable = function (target: object, handler: ProxyHandler<object>) {
 	const proxy = createProxy(target, handler)
