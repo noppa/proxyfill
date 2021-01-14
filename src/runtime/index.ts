@@ -218,12 +218,12 @@ export type RuntimeFunctions = {
 	set: typeof set
 }
 
-export function ProxyPolyfill(
+export function Proxy(
 	this: any,
 	target: object,
 	handler: ProxyHandler<object>
 ) {
-	const isCalledWithNew = !!this && this instanceof ProxyPolyfill
+	const isCalledWithNew = !!this && this instanceof Proxy
 	if (!isCalledWithNew) {
 		throw new TypeError("Constructor Proxy requires 'new'")
 	}
@@ -231,10 +231,7 @@ export function ProxyPolyfill(
 	return createProxy(target, handler)
 }
 
-ProxyPolyfill.revocable = function (
-	target: object,
-	handler: ProxyHandler<object>
-) {
+Proxy.revocable = function (target: object, handler: ProxyHandler<object>) {
 	const proxy = createProxy(target, handler)
 	function revoke() {
 		proxy.__proxyfill.revoked = true
