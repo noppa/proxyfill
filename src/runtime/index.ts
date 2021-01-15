@@ -45,10 +45,6 @@ function createProxy(
 			handler: shallowClone(handler),
 			revoked: false,
 		},
-		toString: function () {
-			console.log('str')
-			return 'Proxy'
-		},
 	}
 
 	let proxy: any
@@ -109,7 +105,7 @@ function createProxy(
 	} else {
 		runtimeTraps = []
 	}
-	// runtimeTraps.push('valueOf', 'toString')
+	runtimeTraps.push('valueOf', 'toString')
 
 	for (let i = 0; i < runtimeTraps.length; i++) {
 		const trap = runtimeTraps[i]
@@ -147,24 +143,26 @@ function assertNotRevoked(api: ProxyfillPrivateApi, op: string) {
  * 		multiple times.
  */
 export function get(obj: PossiblyProxy, property: unknown): unknown {
-	// assertNotPrivateApiProp(property)
+	// NOTE: Stringifying obj here, by using console.log, for example, can cause
+	// inifinite loop because the proxy has Symbol.toPrimitive trap set to call
+	// this function again.
 
-	console.log('get 2', obj)
-	// const api = getProxyfillApi(obj)
-	// console.log(String(get))
+	assertNotPrivateApiProp(property)
 
-	// if (api) {
-	// 	assertNotRevoked(api, 'get')
-	// 	const handlers = api.handler
-	// 	const getHandler = handlers.get
-	// 	console.log('get', typeof getHandler)
-	// 	// if (getHandler) {
-	// 	// 	return getHandler.call(handlers, api.target, property as any, obj)
-	// 	// }
-	// }
-	// console.log('get 2', obj, property)
+	const api = getProxyfillApi(obj)
 
-	// return (obj as any)[property as any]
+	if (api) {
+		assertNotRevoked(api, 'get')
+		const handlers = api.handler
+		const getHandler = handlers.get
+		console.log('get', typeof getHandler)
+		if (getHandler) {
+			return getHandler.call(handlers, api.target, property as any, obj)
+		}
+		obj = api.target
+	}
+
+	return (obj as any)[property as any]
 }
 
 export function invoke(
@@ -178,26 +176,6 @@ export function invoke(
 	}
 	return apply.call(fn, obj, args)
 }
-
-// Spec: https://www.ecma-international.org/ecma-262/11.0/index.html#sec-toprimitive
-// function toPrimitive(
-// 	this: ProxyPrivateApiContainer,
-// 	hint: 'string' | 'number' | 'default'
-// ) {
-// 	const targetToPrimitive = get(this, 'toPrimitive') as AnyFunction | void
-// 	if (typeof targetToPrimitive !== 'undefined') {
-// 		return call.call(targetToPrimitive, this, hint)
-// 	}
-// 	if (hint === 'default') hint = 'number'
-// 	const methodNames: (keyof Object)[] =
-// 		hint === 'string' ? ['toString', 'valueOf'] : ['valueOf', 'toString']
-// 	for (let i = 0; i < 2; i++) {
-// 		const targetFn = get(this, methodNames[i])
-// 		if (typeof targetFn === 'function') {
-// 			const res = call.call(targetFn as AnyFunction, this)
-// 		}
-// 	}
-// }
 
 export function set(
 	obj: PossiblyProxy,
@@ -215,6 +193,7 @@ export function set(
 		if (setHandler) {
 			return setHandler.call(handlers, api.target, property, value, obj)
 		}
+		obj = api.target
 	}
 
 	return ((obj as any)[property] = value)
