@@ -134,10 +134,20 @@ function assertNotRevoked(api: ProxyfillPrivateApi, op: string) {
 	}
 }
 
+function normalizeProperty(propertyName: any): string | symbol {
+	const t = typeof propertyName
+	if (t === 'string' || t === 'symbol') {
+		assertNotPrivateApiProp(propertyName)
+		return propertyName
+	}
+
+	return String(propertyName)
+}
+
 /**
  *
  * @param obj Target object to get a value from, possibly a "Proxy" created with createProxy.
- * @param property Name of the property to get
+ * @param propName Name of the property to get
  * @param notProxy Result of calling isNotProxy(obj) that can be used as an optimization
  * 		to skip the proxy check in places where properties of a constant object are accessed
  * 		multiple times.
@@ -147,8 +157,7 @@ export function get(obj: PossiblyProxy, property: unknown): unknown {
 	// inifinite loop because the proxy has Symbol.toPrimitive trap set to call
 	// this function again.
 
-	assertNotPrivateApiProp(property)
-
+	const propName = normalizeProperty(property)
 	const api = getProxyfillApi(obj)
 
 	if (api) {
@@ -156,12 +165,12 @@ export function get(obj: PossiblyProxy, property: unknown): unknown {
 		const handlers = api.handler
 		const getHandler = handlers.get
 		if (getHandler) {
-			return getHandler.call(handlers, api.target, property as any, obj)
+			return getHandler.call(handlers, api.target, propName as any, obj)
 		}
 		obj = api.target
 	}
 
-	return (obj as any)[property as any]
+	return (obj as any)[propName as any]
 }
 
 export function invoke(
@@ -178,10 +187,10 @@ export function invoke(
 
 export function set(
 	obj: PossiblyProxy,
-	property: string,
+	property: unknown,
 	value: unknown
 ): unknown {
-	assertNotPrivateApiProp(property)
+	const propName = normalizeProperty(property)
 
 	const api = getProxyfillApi(obj)
 
@@ -190,12 +199,12 @@ export function set(
 		const handlers = api.handler
 		const setHandler = handlers.set
 		if (setHandler) {
-			return setHandler.call(handlers, api.target, property, value, obj)
+			return setHandler.call(handlers, api.target, propName, value, obj)
 		}
 		obj = api.target
 	}
 
-	return ((obj as any)[property] = value)
+	return ((obj as any)[propName] = value)
 }
 
 export type RuntimeFunctions = {
