@@ -170,17 +170,17 @@ export function get(obj: PossiblyProxy, property: unknown): unknown {
 		obj = api.target
 	}
 
-	return (obj as any)[propName as any]
+	return (obj as any)[propName]
 }
 
 export function invoke(
 	obj: PossiblyProxy,
-	property: unknown,
+	property: string | symbol | unknown,
 	args: unknown[]
 ): unknown {
 	const fn: any = get(obj, property)
 	if (typeof fn !== 'function') {
-		throw new TypeError(`${property} is not a function`)
+		throw new TypeError(`${String(property)} is not a function`)
 	}
 	return apply.call(fn, obj, args)
 }
@@ -199,7 +199,22 @@ export function set(
 		const handlers = api.handler
 		const setHandler = handlers.set
 		if (setHandler) {
-			return setHandler.call(handlers, api.target, propName, value, obj)
+			const result = setHandler.call(
+				handlers,
+				api.target,
+				propName,
+				value,
+				obj
+			)
+			if (!result) {
+				// Assume strict mode and throw for failed assignment
+				throw new TypeError(
+					`'set' on proxy: trap returned falsish for property '${String(
+						propName
+					)}'`
+				)
+			}
+			return value
 		}
 		obj = api.target
 	}
