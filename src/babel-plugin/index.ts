@@ -14,9 +14,7 @@ const runtimeFunctionsMap: {[k in keyof RuntimeFunctions]: 0} = {
 	invoke: 0,
 }
 
-const runtimeApiFunctionNames = Object.keys(runtimeFunctionsMap).filter(
-	(name) => name !== '__esModule'
-)
+const runtimeApiFunctionNames = Object.keys(runtimeFunctionsMap)
 
 const importTemplate = template(`
   import {
