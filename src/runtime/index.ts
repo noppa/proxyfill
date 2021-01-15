@@ -155,7 +155,6 @@ export function get(obj: PossiblyProxy, property: unknown): unknown {
 		assertNotRevoked(api, 'get')
 		const handlers = api.handler
 		const getHandler = handlers.get
-		console.log('get', typeof getHandler)
 		if (getHandler) {
 			return getHandler.call(handlers, api.target, property as any, obj)
 		}
