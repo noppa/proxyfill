@@ -1,3 +1,2 @@
 node_modules
-src/runtime/dist
-src/babel-plugin/dist
+dist

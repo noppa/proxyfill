@@ -15,8 +15,11 @@ function config(output) {
   }
 }
 
+
+export const iife = config({format: 'iife', file: 'dist/runtime-global.js'})
+export const cjs = config({format: 'cjs', file: 'dist/runtime.js'})
+export const esm = config({format: 'esm', file: 'dist/runtime.mjs'})
+
 export default [
-  config({format: 'iife', file: 'dist/global.js'}),
-  config({format: 'cjs', file: 'dist/index.js'}),
-  config({format: 'esm', file: 'dist/index.mjs'}),
+  iife, cjs, esm,
 ]
