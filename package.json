@@ -17,6 +17,8 @@
     "@babel/preset-env": "^7.12.1",
     "@babel/preset-typescript": "^7.12.1",
     "@babel/traverse": "^7.12.1",
+    "@rollup/plugin-babel": "^5.2.2",
+    "@rollup/plugin-typescript": "^8.1.0",
     "@types/babel__core": "^7.1.10",
     "@types/babel__template": "^7.0.3",
     "@types/babel__traverse": "^7.0.15",
@@ -30,12 +32,14 @@
     "eslint-plugin-prettier": "^3.1.4",
     "jest": "^26.6.3",
     "prettier": "^2.1.2",
+    "rollup": "^2.36.2",
     "test262-harness": "^7.5.2"
   },
   "scripts": {
     "test": "jest",
-    "test262": "npx test262-harness --test262Dir test262/test262 --features Proxy test262/test262/test/built-ins/Proxy/get/call-parameters.js",
-    "typescript": "tsc --noEmit"
+    "test262": "npx test262-harness --preprocessor test262/preprocessor.js --test262Dir test262/test262 --features Proxy test262/test262/test/built-ins/Proxy/get/call-parameters.js",
+    "typescript": "tsc --noEmit",
+    "build:runtime": "rollup -c src/runtime/rollup.config.js"
   },
   "repository": {
     "type": "git",
