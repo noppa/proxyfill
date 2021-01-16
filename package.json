@@ -34,7 +34,7 @@
   },
   "scripts": {
     "test": "jest",
-    "test262": "npx test262-harness --test262Dir test262/test262 --features Proxy 'test262/test262/test/**/*.js'",
+    "test262": "npx test262-harness --test262Dir test262/test262 --features Proxy test262/test262/test/built-ins/Proxy/get/call-parameters.js",
     "typescript": "tsc --noEmit"
   },
   "repository": {
