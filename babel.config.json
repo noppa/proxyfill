@@ -7,8 +7,7 @@
         "targets": {
           "node": "10"
         },
-        "loose": true,
-        "modules": "commonjs"
+        "loose": true
       }
     ]
   ],
