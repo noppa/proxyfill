@@ -24,9 +24,6 @@ const {bind, apply} = isObject
 const {slice} = []
 const {assign, defineProperty} = Object
 
-const shallowClone = <T extends Record<string, any>>(obj: T): T =>
-	assign({}, obj)
-
 function createProxy(
 	// eslint-disable-next-line @typescript-eslint/ban-types
 	target: object,
@@ -42,7 +39,7 @@ function createProxy(
 	const proxyPrivateApi: ProxyPrivateApiContainer = {
 		__proxyfill: {
 			target,
-			handler: shallowClone(handler),
+			handler,
 			revoked: false,
 		},
 	}

@@ -21,7 +21,7 @@ const ast = parse(code, {
 })
 
 setTimeout(() => {
-	babelTraverse<VisitorState>(ast, traverse.visitor, undefined, {})
+	babelTraverse<VisitorState>(ast, traverse.visitor, undefined, {opts: {}})
 	const newCode = generate(ast)
 	console.log(newCode.code)
 }, 500)

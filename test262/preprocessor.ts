@@ -33,7 +33,6 @@ export default function preprocessProxyfill(test: ResultObject) {
 			opts: {importStyle: 'none'},
 		})
 		test.contents = prelude + ';\n' + generate(ast).code
-		console.log(test.contents)
 	} catch (error) {
 		test.result = {
 			stderr: `${error.name}: ${error.message}\n`,
