@@ -1,3 +1,8 @@
+export type IgnoredPropertiesConfig = {
+	objectIdentifierName: string | '*',
+	propertyIdentifierName: string | '*'
+}
+
 export type ProxyfillBabelPluginOptions = {
 	/**
 	 * Controls how the Proxyfill internal dependencies
@@ -8,7 +13,8 @@ export type ProxyfillBabelPluginOptions = {
 	 * statements whatsoever and assumes you have loaded
 	 * the global runtime-global.js script instead.
 	 */
-	importStyle?: 'esmodule' | 'commonjs' | 'none'
+	importStyle?: 'esmodule' | 'commonjs' | 'none',
+	ignoredProperties: IgnoredPropertiesConfig[]
 }
 
 export type VisitorState = {
