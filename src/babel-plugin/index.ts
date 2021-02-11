@@ -45,7 +45,7 @@ export default function babelPluginProxyfill(): Babel.PluginObj<VisitorState> {
 	return {
 		name: 'proxyfill',
 		visitor: {
-			Program(path, {opts}: {opts: ProxyfillBabelPluginOptions}) {
+			Program(path, {opts}: VisitorState) {
 				const {importStyle = 'esmodule'} = opts
 				let importRuntime: ImportDeclaration | VariableDeclaration
 				switch (importStyle) {

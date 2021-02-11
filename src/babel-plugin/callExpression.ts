@@ -1,9 +1,13 @@
 import * as t from '@babel/types'
 import {NodePath} from '@babel/traverse'
 import {callRuntime, ParameterExpression} from './useRuntime'
-import {getPropertyOfMember} from './helpers'
+import {getPropertyOfMember, shouldIgnoreProperty} from './helpers'
+import {VisitorState} from './types'
 
-export default function CallExpression(path: NodePath<t.CallExpression>) {
+export default function CallExpression(
+	path: NodePath<t.CallExpression>,
+	{opts}: VisitorState
+) {
 	const memberInfo = getPropertyOfMember(path.get('callee'))
 	if (!memberInfo) return
 	const {object, property} = memberInfo
@@ -24,6 +28,10 @@ export default function CallExpression(path: NodePath<t.CallExpression>) {
 			}
 		)
 	)
+
+	if (shouldIgnoreProperty(object, property, opts.ignoredProperties)) {
+		return
+	}
 
 	const invokeExpr = callRuntime('invoke', object, property, args)
 	path.replaceWith(invokeExpr)

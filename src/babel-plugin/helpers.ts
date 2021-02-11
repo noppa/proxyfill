@@ -1,5 +1,6 @@
 import * as t from '@babel/types'
 import {NodePath} from '@babel/traverse'
+import {IgnoredPropertiesConfig} from './types'
 
 type PropertyInfo = {
 	object: t.Expression
@@ -26,4 +27,19 @@ export function getPropertyOfMember(
 		object,
 		property: propertyReference,
 	}
+}
+
+export function shouldIgnoreProperty(
+	obj: t.Expression,
+	prop: t.Expression,
+	ignoredProperties: IgnoredPropertiesConfig[]
+) {
+	if (!t.isIdentifier(obj) || !t.isIdentifier(prop)) return false
+	const objName = obj.name
+	const propName = prop.name
+	return ignoredProperties.some(
+		(config) =>
+			config.objectIdentifierName === objName &&
+			config.propertyIdentifierName === propName
+	)
 }

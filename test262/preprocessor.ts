@@ -30,9 +30,18 @@ export default function preprocessProxyfill(test: ResultObject) {
 		})
 
 		babelTraverse<VisitorState>(ast, traverse.visitor, undefined, {
-			opts: {importStyle: 'none'},
+			opts: {
+				importStyle: 'none',
+				ignoredProperties: [
+					{
+						objectIdentifierName: 'assert',
+						propertyIdentifierName: '*',
+					},
+				],
+			},
 		})
 		test.contents = prelude + ';\n' + generate(ast).code
+		console.log(test.contents)
 	} catch (error) {
 		test.result = {
 			stderr: `${error.name}: ${error.message}\n`,

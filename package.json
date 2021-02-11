@@ -38,7 +38,7 @@
   "scripts": {
     "test": "jest tests",
     "pretest262": "rollup -c src/runtime/test262-rollup.config.js",
-    "test262": "npx test262-harness --preprocessor test262/preprocessor.js --test262Dir test262/test262 --features Proxy test262/test262/test/built-ins/Proxy/get/call-parameters.js",
+    "test262": "npx test262-harness --preprocessor test262/preprocessor.js --test262Dir test262/test262 --features Proxy test262/test262/test/built-ins/Proxy/apply/null-handler.js",
     "typescript": "tsc --noEmit",
     "build:runtime": "rollup -c src/runtime/rollup.config.js"
   },
