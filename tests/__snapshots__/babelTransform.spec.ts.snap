@@ -2,6 +2,7 @@
 
 exports[`proxyfill Babel plugin should not transform direct function calls 1`] = `
 "import {
+    Proxy,
     get as _proxyfillRuntime$get,
     set as _proxyfillRuntime$set,
     invoke as _proxyfillRuntime$invoke,
@@ -12,6 +13,7 @@ bar()
 
 exports[`proxyfill Babel plugin should transform computed getters 1`] = `
 "import {
+    Proxy,
     get as _proxyfillRuntime$get,
     set as _proxyfillRuntime$set,
     invoke as _proxyfillRuntime$invoke,
@@ -27,6 +29,7 @@ _proxyfillRuntime$get(foo, _proxyfillRuntime$get(bar, 'baz'))
 
 exports[`proxyfill Babel plugin should transform computed setters 1`] = `
 "import {
+    Proxy,
     get as _proxyfillRuntime$get,
     set as _proxyfillRuntime$set,
     invoke as _proxyfillRuntime$invoke,
@@ -42,6 +45,7 @@ _proxyfillRuntime$set(foo, _proxyfillRuntime$get(bar, 'baz'), 42)
 
 exports[`proxyfill Babel plugin should transform getters 1`] = `
 "import {
+    Proxy,
     get as _proxyfillRuntime$get,
     set as _proxyfillRuntime$set,
     invoke as _proxyfillRuntime$invoke,
@@ -53,6 +57,7 @@ _proxyfillRuntime$get(foo, 'bar')
 
 exports[`proxyfill Babel plugin should transform method calls 1`] = `
 "import {
+    Proxy,
     get as _proxyfillRuntime$get,
     set as _proxyfillRuntime$set,
     invoke as _proxyfillRuntime$invoke,
@@ -64,6 +69,7 @@ _proxyfillRuntime$invoke(foo, 'bar', [])
 
 exports[`proxyfill Babel plugin should transform setters 1`] = `
 "import {
+    Proxy,
     get as _proxyfillRuntime$get,
     set as _proxyfillRuntime$set,
     invoke as _proxyfillRuntime$invoke,

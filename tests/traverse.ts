@@ -13,7 +13,7 @@ export default function traverse(code: string): string {
 		plugins: [],
 	})
 
-	babelTraverse<VisitorState>(ast, traverse.visitor, undefined, {})
+	babelTraverse<VisitorState>(ast, traverse.visitor, undefined, {opts: {}})
 	const newCode = generate(ast)
 	return format(newCode.code, {...(prettierrc as any), parser: 'babel'})
 }

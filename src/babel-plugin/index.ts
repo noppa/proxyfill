@@ -16,10 +16,16 @@ const runtimeFunctionsMap: {[k in keyof RuntimeFunctions]: 0} = {
 	invoke: 0,
 }
 
-const runtimeApiFunctionNames = ['Proxy', ...Object.keys(runtimeFunctionsMap)]
+const runtimeApiFunctionNames = Object.keys(runtimeFunctionsMap)
+
+// TODO: Right now, Proxy is always imported, but we should make it
+// configurable whether it's imported this way or assigned to global etc.
+// Also should rename all local variable/function declarations named "Proxy"
+// so they don't conflict.
 
 const importTemplate = template(`
   import {
+		Proxy,
 		${runtimeApiFunctionNames
 			.map((name) => `${name} as ${toNamedImport(name)}`)
 			.join(', ')}
@@ -28,6 +34,7 @@ const importTemplate = template(`
 
 const requireTemplate = template(`
   const {
+		Proxy,
 		${runtimeApiFunctionNames
 			.map((name) => `${name} as ${toNamedImport(name)}`)
 			.join(', ')}
