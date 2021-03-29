@@ -51,7 +51,7 @@ function createProxy(
 			const args: any[] = slice.call(arguments)
 
 			if (usingNew && handler.construct) {
-				return handler.construct.call(this, target, args)
+				return handler.construct.call(this, target, args, proxy)
 			} else if (!usingNew && handler.apply) {
 				return handler.apply(target, this, args)
 			}
