@@ -1,4 +1,4 @@
-export default function getGlobal(this: any) {
+export default function getGlobal(this: any): typeof globalThis {
 	if (typeof globalThis !== 'undefined') {
 		return globalThis
 	}

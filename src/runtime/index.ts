@@ -11,6 +11,7 @@
 
 import {assertNotPrivateApiProp} from './assertNotPrivateApiProp'
 import type {ProxyPrivateApiContainer, ProxyfillPrivateApi} from './constants'
+import getGlobal from './getGlobal'
 
 /* eslint-disable prefer-rest-params */
 /* eslint-disable @typescript-eslint/ban-types */
@@ -20,9 +21,64 @@ function isObject(val: unknown) {
 	const t = typeof val
 	return t === 'object' || t === 'function'
 }
+
+const globalContext = getGlobal()
 const {bind, apply} = isObject
 const {slice} = []
-const {assign, defineProperty} = Object
+const {
+	assign,
+	defineProperty,
+	hasOwnProperty: Object$hasOwnProperty,
+	getOwnPropertyDescriptor: Object$getOwnPropertyDescriptor,
+} = globalContext.Object
+
+// Custom implementations for some of the JS standard library functions
+// that we need to polyfill / ponyfill to get things working correctly.
+
+const getOwnPropertyDescriptorPolyfill = function getOwnPropertyDescriptor(
+	object: PossiblyProxy,
+	key: string
+): undefined | PropertyDescriptor {
+	// Proxy constructor is an exotic function that has no "prototype" at all
+	if (object === Proxy && key === 'prototype') {
+		return
+	}
+	// TODO: Revoked?
+	const api = getProxyfillApi(object)
+	if (api) {
+		assertNotRevoked(api, 'getOwnPropertyDescriptor')
+		const {handler} = api
+		const {getOwnPropertyDescriptor} = handler
+		if (getOwnPropertyDescriptor) {
+			return getOwnPropertyDescriptor.call(handler, api.target, key)
+		}
+	}
+	return Object$getOwnPropertyDescriptor(object, key)
+}
+
+const hasOwnPropertyPolyfill = function hasOwnProperty(
+	this: PossiblyProxy,
+	key: string
+) {
+	const descr = getOwnPropertyDescriptorPolyfill(this, key)
+	return !!descr
+}
+
+type PolyfillDef = {
+	orig: Function
+	mod: Function
+}
+
+const standardLibraryPolyfills: readonly PolyfillDef[] = [
+	{
+		orig: Object$getOwnPropertyDescriptor,
+		mod: getOwnPropertyDescriptorPolyfill,
+	},
+	{
+		orig: Object$hasOwnProperty,
+		mod: hasOwnPropertyPolyfill,
+	},
+]
 
 function createProxy(
 	// eslint-disable-next-line @typescript-eslint/ban-types
@@ -187,6 +243,15 @@ export function invoke(
 	if (typeof fn !== 'function') {
 		throw new TypeError(`${String(property)} is not a function`)
 	}
+
+	for (const p of standardLibraryPolyfills) {
+		if (fn === p.orig) {
+			// Some standard lib functions, like {}.hasOwnPrototype
+			// need special handling to make some Proxy traps work
+			return p.mod.apply(obj, args)
+		}
+	}
+
 	return apply.call(fn, obj, args)
 }
 

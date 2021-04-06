@@ -56,4 +56,40 @@ describe('proxyfill runtime', () => {
 			expect(() => invoke(p, 'proxy', [])).toThrowError(TypeError)
 		})
 	})
+
+	describe('Interop with standard library functions', () => {
+		it('should redefine Obejct.hasOwnProperty behaviour', () => {
+			const expectedKey = Symbol('foo')
+			const proxy = new Proxy(
+				{},
+				{
+					getOwnPropertyDescriptor(
+						target: any,
+						key: string | symbol
+					): undefined | PropertyDescriptor {
+						if (key === expectedKey) {
+							return {
+								writable: false,
+								enumerable: false,
+								value: 'bar',
+							}
+						}
+					},
+				}
+			)
+
+			expect(invoke(proxy, 'hasOwnProperty', ['foo'])).toBe(false)
+			expect(invoke(proxy, 'hasOwnProperty', [expectedKey])).toBe(true)
+			expect(invoke({}, 'hasOwnProperty', [expectedKey])).toBe(false)
+			expect(
+				(get({}, 'hasOwnProperty') as Function).call(proxy, 'foo')
+			).toBe(false)
+			expect(
+				(get({}, 'hasOwnProperty') as Function).call(proxy, expectedKey)
+			).toBe(true)
+			expect(
+				(get({}, 'hasOwnProperty') as Function).call({}, expectedKey)
+			).toBe(true)
+		})
+	})
 })
