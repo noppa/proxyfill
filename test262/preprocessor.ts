@@ -41,7 +41,7 @@ export default function preprocessProxyfill(test: ResultObject) {
 			},
 		})
 		test.contents = prelude + ';\n' + generate(ast).code
-		console.log(test.contents)
+		// console.log(test.contents)
 	} catch (error) {
 		test.result = {
 			stderr: `${error.name}: ${error.message}\n`,

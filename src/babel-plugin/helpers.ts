@@ -1,6 +1,6 @@
 import * as t from '@babel/types'
 import {NodePath} from '@babel/traverse'
-import {IgnoredPropertiesConfig} from './types'
+import {IgnoredPropertiesConfig, VisitorState} from './types'
 
 type PropertyInfo = {
 	object: t.Expression
@@ -8,7 +8,8 @@ type PropertyInfo = {
 }
 
 export function getPropertyOfMember(
-	memberExpr: NodePath<t.MemberExpression> | NodePath<any>
+	memberExpr: NodePath<t.MemberExpression> | NodePath<any>,
+	ignoredProperties: undefined | null | IgnoredPropertiesConfig[]
 ): null | PropertyInfo {
 	if (!memberExpr.isMemberExpression()) return null
 	const memberNode: t.MemberExpression = memberExpr.node
@@ -18,10 +19,16 @@ export function getPropertyOfMember(
 		return null
 	}
 
-	const propertyReference =
-		computed || !t.isIdentifier(property)
-			? property
-			: t.stringLiteral(property.name)
+	let propertyReference: t.Expression
+	if (!computed && t.isIdentifier(property)) {
+		const {name} = property
+		if (shouldIgnoreProperty(object, name, ignoredProperties)) {
+			return null
+		}
+		propertyReference = t.stringLiteral(name)
+	} else {
+		propertyReference = property
+	}
 
 	return {
 		object,
@@ -29,17 +36,21 @@ export function getPropertyOfMember(
 	}
 }
 
-export function shouldIgnoreProperty(
+function shouldIgnoreProperty(
 	obj: t.Expression,
-	prop: t.Expression,
-	ignoredProperties: IgnoredPropertiesConfig[]
+	propName: string,
+	ignoredProperties: undefined | null | IgnoredPropertiesConfig[]
 ) {
-	if (!t.isIdentifier(obj) || !t.isIdentifier(prop)) return false
+	if (!ignoredProperties?.length || !t.isIdentifier(obj)) {
+		return false
+	}
+
 	const objName = obj.name
-	const propName = prop.name
 	return ignoredProperties.some(
-		(config) =>
-			config.objectIdentifierName === objName &&
-			config.propertyIdentifierName === propName
+		({objectIdentifierName, propertyIdentifierName}) =>
+			(objectIdentifierName === '*' ||
+				objectIdentifierName === objName) &&
+			(propertyIdentifierName === '*' ||
+				propertyIdentifierName === propName)
 	)
 }
