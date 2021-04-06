@@ -50,14 +50,12 @@ function createProxy(
 			const usingNew = !!this && this.constructor === proxy
 			const args: any[] = slice.call(arguments)
 
-			if (usingNew && handler.construct) {
-				return handler.construct.call(this, target, args, proxy)
-			} else if (!usingNew && handler.apply) {
-				return handler.apply(target, this, args)
-			}
-
 			// since the target was a function, fallback to calling it directly.
 			if (usingNew) {
+				assertNotRevoked(proxy.__proxyfill, 'construct')
+				if (handler.construct) {
+					return handler.construct.call(this, target, args, proxy)
+				}
 				// inspired by answers to https://stackoverflow.com/q/1606797
 				args.unshift(target)
 				const ProxyTargetConstructor = bind.apply<Function, any, any>(
@@ -65,13 +63,18 @@ function createProxy(
 					args
 				)
 				return new ProxyTargetConstructor()
+			} else {
+				assertNotRevoked(proxy.__proxyfill, 'apply')
+				if (handler.apply) {
+					return handler.apply(target, this, args)
+				}
+				return target.apply(this, args)
 			}
-			return target.apply(this, args)
 		}
-		assign.call(proxy, proxyPrivateApi)
+		assign(proxy, proxyPrivateApi)
 	} else if (target instanceof Array) {
 		proxy = []
-		assign.call(proxy, proxyPrivateApi)
+		assign(proxy, proxyPrivateApi)
 	} else {
 		proxy = proxyPrivateApi
 	}
@@ -125,9 +128,14 @@ function getProxyfillApi(obj: PossiblyProxy): null | ProxyfillPrivateApi {
 	)
 }
 
-function assertNotRevoked(api: ProxyfillPrivateApi, op: string) {
-	if (api.revoked) {
-		throw new Error(`Cannot perform ${op} on a proxy that has been revoked`)
+function assertNotRevoked(
+	api: null | undefined | ProxyfillPrivateApi,
+	op: string
+) {
+	if (api && api.revoked) {
+		throw new TypeError(
+			`Cannot perform ${op} on a proxy that has been revoked`
+		)
 	}
 }
 

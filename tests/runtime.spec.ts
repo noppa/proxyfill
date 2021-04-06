@@ -1,4 +1,4 @@
-import {Proxy, get, set} from '../src/runtime'
+import {Proxy, get, set, invoke} from '../src/runtime'
 
 describe('proxyfill runtime', () => {
 	describe('calling handlers with correct arguments', () => {
@@ -41,6 +41,19 @@ describe('proxyfill runtime', () => {
 
 			expect(set(proxy, 24, 52)).toBe(52)
 			expect(args).toEqual([obj, '24', 52, expect.any(Object)])
+		})
+	})
+
+	describe('Revocable proxy', () => {
+		it('should throw if function Proxy applied after it is revoked', () => {
+			const p = Proxy.revocable(function () {}, {
+				apply() {
+					return 42
+				},
+			})
+			expect(invoke(p, 'proxy', [])).toBe(42)
+			expect(invoke(p, 'revoke', [])).toBeUndefined()
+			expect(() => invoke(p, 'proxy', [])).toThrowError(TypeError)
 		})
 	})
 })
