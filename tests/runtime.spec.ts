@@ -89,7 +89,7 @@ describe('proxyfill runtime', () => {
 			).toBe(true)
 			expect(
 				(get({}, 'hasOwnProperty') as Function).call({}, expectedKey)
-			).toBe(true)
+			).toBe(false)
 		})
 	})
 })

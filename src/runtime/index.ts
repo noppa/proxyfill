@@ -231,7 +231,18 @@ export function get(obj: PossiblyProxy, property: unknown): unknown {
 		obj = api.target
 	}
 
-	return (obj as any)[propName]
+	const val = (obj as any)[propName]
+
+	for (let i = 0, n = standardLibraryPolyfills.length; i < n; i++) {
+		const p = standardLibraryPolyfills[i]
+		if (val === p.orig) {
+			// Don't let userland code bind original versions of polyfilled standard library
+			// functions to variables, return the polyfill instead.
+			return p.mod
+		}
+	}
+
+	return val
 }
 
 export function invoke(
@@ -244,7 +255,8 @@ export function invoke(
 		throw new TypeError(`${String(property)} is not a function`)
 	}
 
-	for (const p of standardLibraryPolyfills) {
+	for (let i = 0, n = standardLibraryPolyfills.length; i < n; i++) {
+		const p = standardLibraryPolyfills[i]
 		if (fn === p.orig) {
 			// Some standard lib functions, like {}.hasOwnPrototype
 			// need special handling to make some Proxy traps work
