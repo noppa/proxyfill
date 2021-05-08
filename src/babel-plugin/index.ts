@@ -34,7 +34,8 @@ const importTemplate = template(`
 
 const requireTemplate = template(
 	`var ${namespaceName} = require('proxyfill/runtime'), ` +
-		['Proxy', ...runtimeApiFunctionNames]
+		`Proxy = ${namespaceName}.Proxy, ` +
+		runtimeApiFunctionNames
 			.map(
 				(exportedName) =>
 					`${toNamedImport(
