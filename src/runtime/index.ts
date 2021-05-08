@@ -72,7 +72,8 @@ const assignPolyfill: typeof Object['assign'] = function assign(
 	if (target === null || target === undefined) {
 		throw new TypeError('Cannot convert undefined or null to object')
 	}
-	// Optimization for the common case: two arguments, neither of which is Proxy
+	// Optimization for the common case: two arguments, neither of which
+	// is Proxy, just delegate to built-in Object.assign
 	if (arguments.length === 2 && !isProxy(target) && !isProxy(source)) {
 		return assign(target, source)
 	}
