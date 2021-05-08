@@ -8,25 +8,25 @@ describe('runtime behavior of generated code', () => {
 		testCode: () => ResultType
 	) {
 		function runTest() {
-			const context = {
-				RESULT: undefined,
-				Object,
-				require(moduleName: string) {
-					if (moduleName === 'proxyfill/runtime') {
-						return proxyfillRuntime
-					}
-					throw new Error('Unknown module ' + moduleName)
-				},
+			function requireFromScript(moduleName: string) {
+				if (moduleName === 'proxyfill/runtime') {
+					return proxyfillRuntime
+				}
+				throw new Error('Unknown module ' + moduleName)
 			}
-			const rawSource = `RESULT = (${testCode.toString()})();`
+			const result = {
+				value: undefined,
+			}
+			const rawSource = `RESULT.value = (${testCode.toString()})();`
 			const transpiledSource = traverse(rawSource, {
 				importStyle: 'commonjs',
 			})
 			console.log(testCode.name + ': ' + transpiledSource)
-			vm.createContext(context)
-			const script = new vm.Script(transpiledSource)
-			script.runInContext(context)
-			expect(context.RESULT).toEqual(expectedResult)
+			new Function('require', 'RESULT', transpiledSource)(
+				requireFromScript,
+				result
+			)
+			expect(result.value).toEqual(expectedResult)
 		}
 		return runTest
 	}
@@ -79,6 +79,30 @@ describe('runtime behavior of generated code', () => {
 				})
 				Object.assign(proxy, {foo: 2, bar: 3})
 				return obj
+			})
+		)
+		it(
+			'should go through Proxy when calling hasOwnProperty',
+			mkTest({called: true, hasFoo: false, hasBar: true}, () => {
+				const obj = {foo: 1}
+				let called = false
+				const proxy: any = new Proxy(obj, {
+					getOwnPropertyDescriptor(target, key) {
+						called = true
+						// "lie" that the shape of the object is {bar: 1}
+						return key === 'bar'
+							? {
+									value: 1,
+									writable: true,
+									enumerable: true,
+									configurable: true,
+							  }
+							: undefined
+					},
+				})
+				const hasFoo = proxy.hasOwnProperty('foo')
+				const hasBar = proxy.hasOwnProperty('bar')
+				return {called, hasFoo, hasBar}
 			})
 		)
 	})

@@ -43,7 +43,6 @@ const getOwnPropertyDescriptorPolyfill = function getOwnPropertyDescriptor(
 	if (object === Proxy && key === 'prototype') {
 		return
 	}
-	// TODO: Revoked?
 	const api = getProxyfillApi(object)
 	if (api) {
 		assertNotRevoked(api, 'getOwnPropertyDescriptor')
@@ -274,6 +273,8 @@ export function get(obj: PossiblyProxy, property: unknown): unknown {
 	}
 
 	if (!calledHandler) val = (obj as any)[propName]
+
+	console.log('blaa', calledHandler, property, val)
 
 	for (let i = 0, n = standardLibraryPolyfills.length; i < n; i++) {
 		const p = standardLibraryPolyfills[i]
