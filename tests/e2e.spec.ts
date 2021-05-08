@@ -10,6 +10,7 @@ describe('runtime behavior of generated code', () => {
 		function runTest() {
 			const context = {
 				RESULT: undefined,
+				Object,
 				require(moduleName: string) {
 					if (moduleName === 'proxyfill/runtime') {
 						return proxyfillRuntime
@@ -61,6 +62,23 @@ describe('runtime behavior of generated code', () => {
 					},
 				})
 				return proxy.foo + proxy.bar
+			})
+		)
+	})
+
+	describe('polyfilled built-in functions', () => {
+		it(
+			'should go through Proxy when calling Object.assign',
+			mkTest({foo: 3, bar: 4} as {foo: number; bar?: number}, () => {
+				const obj = {foo: 1}
+				const proxy = new Proxy(obj, {
+					set(target, key, value) {
+						target[key] = value + 1
+						return true
+					},
+				})
+				Object.assign(proxy, {foo: 2, bar: 3})
+				return obj
 			})
 		)
 	})

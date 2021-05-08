@@ -64,6 +64,35 @@ const hasOwnPropertyPolyfill = function hasOwnProperty(
 	return !!descr
 }
 
+const assignPolyfill: typeof Object['assign'] = function assign(
+	target: any,
+	source: any // Needed to make .length = 2
+	/* ...rest */
+): any {
+	if (target === null || target === undefined) {
+		throw new TypeError('Cannot convert undefined or null to object')
+	}
+	// Optimization for the common case: two arguments, neither of which is Proxy
+	if (arguments.length === 2 && !isProxy(target) && !isProxy(source)) {
+		return assign(target, source)
+	}
+
+	const to = Object(target)
+
+	for (let index = 1; index < arguments.length; index++) {
+		const nextSource = arguments[index]
+
+		if (nextSource !== null && nextSource !== undefined) {
+			for (const nextKey in nextSource) {
+				if (Object$hasOwnProperty.call(nextSource, nextKey)) {
+					set(to, nextKey, get(nextSource, nextKey))
+				}
+			}
+		}
+	}
+	return to
+}
+
 type PolyfillDef = {
 	orig: Function
 	mod: Function
@@ -77,6 +106,10 @@ const standardLibraryPolyfills: readonly PolyfillDef[] = [
 	{
 		orig: Object$hasOwnProperty,
 		mod: hasOwnPropertyPolyfill,
+	},
+	{
+		orig: assign,
+		mod: assignPolyfill,
 	},
 ]
 
@@ -184,6 +217,10 @@ function getProxyfillApi(obj: PossiblyProxy): null | ProxyfillPrivateApi {
 	)
 }
 
+function isProxy(obj: PossiblyProxy): obj is ProxyPrivateApiContainer {
+	return !!getProxyfillApi(obj)
+}
+
 function assertNotRevoked(
 	api: null | undefined | ProxyfillPrivateApi,
 	op: string
@@ -221,17 +258,21 @@ export function get(obj: PossiblyProxy, property: unknown): unknown {
 	const propName = normalizeProperty(property)
 	const api = getProxyfillApi(obj)
 
+	let val: any,
+		calledHandler = false
+
 	if (api) {
 		assertNotRevoked(api, 'get')
 		const handlers = api.handler
 		const getHandler = handlers.get
 		if (getHandler) {
-			return getHandler.call(handlers, api.target, propName as any, obj)
+			calledHandler = true
+			val = getHandler.call(handlers, api.target, propName as any, obj)
 		}
 		obj = api.target
 	}
 
-	const val = (obj as any)[propName]
+	if (!calledHandler) val = (obj as any)[propName]
 
 	for (let i = 0, n = standardLibraryPolyfills.length; i < n; i++) {
 		const p = standardLibraryPolyfills[i]
