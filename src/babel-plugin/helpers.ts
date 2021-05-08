@@ -1,6 +1,7 @@
 import * as t from '@babel/types'
 import {NodePath} from '@babel/traverse'
 import {IgnoredPropertiesConfig, VisitorState} from './types'
+import {namespaceName} from './constants'
 
 type PropertyInfo = {
 	object: t.Expression
@@ -27,6 +28,9 @@ export function getPropertyOfMember(
 		}
 		propertyReference = t.stringLiteral(name)
 	} else {
+		if (shouldIgnoreProperty(object, property, ignoredProperties)) {
+			return null
+		}
 		propertyReference = property
 	}
 
@@ -38,14 +42,30 @@ export function getPropertyOfMember(
 
 function shouldIgnoreProperty(
 	obj: t.Expression,
-	propName: string,
+	propName: string | t.Expression,
 	ignoredProperties: undefined | null | IgnoredPropertiesConfig[]
 ) {
-	if (!ignoredProperties?.length || !t.isIdentifier(obj)) {
+	// TODO: Even if obj is a dynamic expression, we should ignore property
+	// with config { objectIdentifierName: '*', propertyIdentifierName: 'foo' }
+	if (!t.isIdentifier(obj)) {
+		return false
+	}
+	const objName = obj.name
+
+	if (objName === namespaceName) {
+		// Don't transform access to the imported module, e.g.
+		// var proxyfillRuntime$get = _proxyfillRuntime['get'];
+		// should not be converted to
+		// var proxyfillRuntime$get = proxyfillRuntime$get(__proxyfillRuntime, 'get')
+		return true
+	}
+
+	// TODO: Even if propName is dynamic expression, we should ignore property
+	// with config { objectIdentifierName: 'foo', propertyIdentifierName: '*' }
+	if (typeof propName !== 'string' || !ignoredProperties?.length) {
 		return false
 	}
 
-	const objName = obj.name
 	return ignoredProperties.some(
 		({objectIdentifierName, propertyIdentifierName}) =>
 			(objectIdentifierName === '*' ||

@@ -5,7 +5,7 @@ import CallExpression from './callExpression'
 import type * as Babel from '@babel/core'
 import template from '@babel/template'
 import {ProxyfillBabelPluginOptions, VisitorState} from './types'
-import {toNamedImport} from './constants'
+import {namespaceName, toNamedImport} from './constants'
 import {RuntimeFunctions} from '../runtime'
 import invalidValue from '../utils/invalidValue'
 import {ImportDeclaration, VariableDeclaration} from '@babel/types'
@@ -32,14 +32,18 @@ const importTemplate = template(`
 	} from 'proxyfill/runtime'
 `)
 
-const requireTemplate = template(`
-  const {
-		Proxy,
-		${runtimeApiFunctionNames
-			.map((name) => `${name} as ${toNamedImport(name)}`)
-			.join(', ')}
-	} = require('proxyfill/runtime')
-`)
+const requireTemplate = template(
+	`var ${namespaceName} = require('proxyfill/runtime'), ` +
+		['Proxy', ...runtimeApiFunctionNames]
+			.map(
+				(exportedName) =>
+					`${toNamedImport(
+						exportedName
+					)} = ${namespaceName}['${exportedName}']`
+			)
+			.join(', ') +
+		';'
+)
 
 export default function babelPluginProxyfill(): Babel.PluginObj<VisitorState> {
 	return {
