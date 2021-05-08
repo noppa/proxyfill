@@ -33,7 +33,7 @@ describe('runtime behavior of generated code', () => {
 	describe('meta tests for e2e', () => {
 		// Sanity check that our test setup works
 		it(
-			'should compile the procided function correctly',
+			'should compile the provided function correctly',
 			mkTest(
 				[
 					`function getOwnSource() {`,
