@@ -21,12 +21,20 @@ describe('runtime behavior of generated code', () => {
 			const transpiledSource = traverse(rawSource, {
 				importStyle: 'commonjs',
 			})
-			console.log(testCode.name + ': ' + transpiledSource)
+			// console.log(testCode.name + ': ' + transpiledSource)
 			new Function('require', 'RESULT', transpiledSource)(
 				requireFromScript,
 				result
 			)
+
 			expect(result.value).toEqual(expectedResult)
+			// As a sanity check, also run the test with actual Proxy to make
+			// sure the test expectation is correct.
+			const nativeResult = {
+				value: undefined,
+			}
+			new Function('RESULT', rawSource)(nativeResult)
+			expect(nativeResult.value).toEqual(expectedResult)
 		}
 		return runTest
 	}
