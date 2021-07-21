@@ -31,12 +31,7 @@ describe('proxyfill runtime', () => {
 			}
 			const proxy = new Proxy(obj, handlers)
 			expect(set(proxy, Symbol.for('foo'), 32)).toBe(32)
-			expect(args).toEqual([
-				obj,
-				Symbol.for('foo'),
-				32,
-				expect.any(Object),
-			])
+			expect(args).toEqual([obj, Symbol.for('foo'), 32, expect.any(Object)])
 			expect(args[3]).toBe(proxy)
 
 			expect(set(proxy, 24, 52)).toBe(52)
@@ -81,9 +76,9 @@ describe('proxyfill runtime', () => {
 			expect(invoke(proxy, 'hasOwnProperty', ['foo'])).toBe(false)
 			expect(invoke(proxy, 'hasOwnProperty', [expectedKey])).toBe(true)
 			expect(invoke({}, 'hasOwnProperty', [expectedKey])).toBe(false)
-			expect(
-				(get({}, 'hasOwnProperty') as Function).call(proxy, 'foo')
-			).toBe(false)
+			expect((get({}, 'hasOwnProperty') as Function).call(proxy, 'foo')).toBe(
+				false
+			)
 			expect(
 				(get({}, 'hasOwnProperty') as Function).call(proxy, expectedKey)
 			).toBe(true)

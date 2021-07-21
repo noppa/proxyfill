@@ -1,2 +1,1 @@
-export { default } from './babel-plugin'
-
+export {default} from './babel-plugin'

@@ -38,9 +38,7 @@ const requireTemplate = template(
 		runtimeApiFunctionNames
 			.map(
 				(exportedName) =>
-					`${toNamedImport(
-						exportedName
-					)} = ${namespaceName}['${exportedName}']`
+					`${toNamedImport(exportedName)} = ${namespaceName}['${exportedName}']`
 			)
 			.join(', ') +
 		';'

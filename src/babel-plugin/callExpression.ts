@@ -16,20 +16,15 @@ export default function CallExpression(
 	const {object, property} = memberInfo
 
 	const args = t.arrayExpression(
-		path.get('arguments').map(
-			(_): ParameterExpression => {
-				const {node} = _
-				if (
-					t.isArgumentPlaceholder(node) ||
-					t.isJSXNamespacedName(node)
-				) {
-					throw _.buildCodeFrameError(
-						'ArgumentPlaceholders are currently not supported'
-					)
-				}
-				return node
+		path.get('arguments').map((_): ParameterExpression => {
+			const {node} = _
+			if (t.isArgumentPlaceholder(node) || t.isJSXNamespacedName(node)) {
+				throw _.buildCodeFrameError(
+					'ArgumentPlaceholders are currently not supported'
+				)
 			}
-		)
+			return node
+		})
 	)
 
 	const invokeExpr = callRuntime('invoke', object, property, args)

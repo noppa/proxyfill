@@ -68,9 +68,7 @@ function shouldIgnoreProperty(
 
 	return ignoredProperties.some(
 		({objectIdentifierName, propertyIdentifierName}) =>
-			(objectIdentifierName === '*' ||
-				objectIdentifierName === objName) &&
-			(propertyIdentifierName === '*' ||
-				propertyIdentifierName === propName)
+			(objectIdentifierName === '*' || objectIdentifierName === objName) &&
+			(propertyIdentifierName === '*' || propertyIdentifierName === propName)
 	)
 }

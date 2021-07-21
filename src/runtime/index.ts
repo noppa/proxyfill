@@ -226,9 +226,7 @@ function assertNotRevoked(
 	op: string
 ) {
 	if (api && api.revoked) {
-		throw new TypeError(
-			`Cannot perform ${op} on a proxy that has been revoked`
-		)
+		throw new TypeError(`Cannot perform ${op} on a proxy that has been revoked`)
 	}
 }
 
@@ -324,13 +322,7 @@ export function set(
 		const handlers = api.handler
 		const setHandler = handlers.set
 		if (setHandler) {
-			const result = setHandler.call(
-				handlers,
-				api.target,
-				propName,
-				value,
-				obj
-			)
+			const result = setHandler.call(handlers, api.target, propName, value, obj)
 			if (!result) {
 				// Assume strict mode and throw for failed assignment
 				throw new TypeError(
