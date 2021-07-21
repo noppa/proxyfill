@@ -5,7 +5,8 @@ import * as proxyfillRuntime from '../src/runtime'
 describe('runtime behavior of generated code', () => {
 	function mkTest<ResultType>(
 		expectedResult: ResultType,
-		testCode: () => ResultType
+		testCode: () => ResultType,
+		options?: {disableNativeProxyCheck?: boolean}
 	) {
 		function runTest() {
 			function requireFromScript(moduleName: string) {
@@ -28,13 +29,16 @@ describe('runtime behavior of generated code', () => {
 			)
 
 			expect(result.value).toEqual(expectedResult)
-			// As a sanity check, also run the test with actual Proxy to make
-			// sure the test expectation is correct.
-			const nativeResult = {
-				value: undefined,
+
+			if (!options?.disableNativeProxyCheck) {
+				// As a sanity check, also run the test with actual Proxy to make
+				// sure the test expectation is correct.
+				const nativeResult = {
+					value: undefined,
+				}
+				new Function('RESULT', rawSource)(nativeResult)
+				expect(nativeResult.value).toEqual(expectedResult)
 			}
-			new Function('RESULT', rawSource)(nativeResult)
-			expect(nativeResult.value).toEqual(expectedResult)
 		}
 		return runTest
 	}
@@ -46,15 +50,16 @@ describe('runtime behavior of generated code', () => {
 			mkTest(
 				[
 					`function getOwnSource() {`,
-					`    const res = _proxyfillRuntime$invoke(getOwnSource, 'toString', [])`,
+					`        const res = _proxyfillRuntime$invoke(getOwnSource, 'toString', [])`,
 					``,
-					`    return res`,
-					`}`,
+					`        return res`,
+					`    }`,
 				].join('\n'),
 				function getOwnSource() {
 					const res = getOwnSource.toString()
 					return res
-				}
+				},
+				{disableNativeProxyCheck: true}
 			)
 		)
 	})
