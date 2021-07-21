@@ -15,7 +15,6 @@ export default function traverse(
 		sourceType: 'module',
 		plugins: [],
 	})
-	console.log(prettierrc)
 
 	babelTraverse<VisitorState>(ast, traverse.visitor, undefined, {opts})
 	const newCode = generate(ast)

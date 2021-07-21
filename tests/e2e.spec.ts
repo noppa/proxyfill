@@ -50,10 +50,10 @@ describe('runtime behavior of generated code', () => {
 			mkTest(
 				[
 					`function getOwnSource() {`,
-					`        const res = _proxyfillRuntime$invoke(getOwnSource, 'toString', [])`,
+					`\t\tconst res = _proxyfillRuntime$invoke(getOwnSource, 'toString', [])`,
 					``,
-					`        return res`,
-					`    }`,
+					`\t\treturn res`,
+					`\t}`,
 				].join('\n'),
 				function getOwnSource() {
 					const res = getOwnSource.toString()
@@ -116,6 +116,13 @@ describe('runtime behavior of generated code', () => {
 				const hasFoo = proxy.hasOwnProperty('foo')
 				const hasBar = proxy.hasOwnProperty('bar')
 				return {called, hasFoo, hasBar}
+			})
+		)
+
+		it(
+			'should pass Array.isArray check',
+			mkTest(true, () => {
+				return Array.isArray(new Proxy([], {}))
 			})
 		)
 	})
