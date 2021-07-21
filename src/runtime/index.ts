@@ -337,10 +337,15 @@ export function set(
 	return ((obj as any)[propName] = value)
 }
 
+export function has(property: unknown, obj: PossiblyProxy): boolean {
+	return false // TODO
+}
+
 export type RuntimeFunctions = {
 	get: typeof get
 	invoke: typeof invoke
 	set: typeof set
+	has: typeof has
 }
 
 interface IProxy {

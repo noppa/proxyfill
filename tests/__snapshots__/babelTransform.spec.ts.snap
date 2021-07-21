@@ -55,6 +55,17 @@ _proxyfillRuntime$get(foo, 'bar')
 "
 `;
 
+exports[`proxyfill Babel plugin should transform in operator usage 1`] = `
+"import {
+	Proxy,
+	get as _proxyfillRuntime$get,
+	set as _proxyfillRuntime$set,
+	invoke as _proxyfillRuntime$invoke,
+} from 'proxyfill/runtime'
+foo in bar
+"
+`;
+
 exports[`proxyfill Babel plugin should transform method calls 1`] = `
 "import {
 	Proxy,

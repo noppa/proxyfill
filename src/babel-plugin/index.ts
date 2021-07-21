@@ -1,6 +1,7 @@
 import MemberExpression from './memberExpression'
 import AssignmentExpression from './assignmentExpression'
 import CallExpression from './callExpression'
+import BinaryExpression from './binaryExpression'
 
 import type * as Babel from '@babel/core'
 import template from '@babel/template'
@@ -14,6 +15,7 @@ const runtimeFunctionsMap: {[k in keyof RuntimeFunctions]: 0} = {
 	get: 0,
 	set: 0,
 	invoke: 0,
+	has: 0,
 }
 
 const runtimeApiFunctionNames = Object.keys(runtimeFunctionsMap)
@@ -72,6 +74,7 @@ export default function babelPluginProxyfill(): Babel.PluginObj<VisitorState> {
 			MemberExpression,
 			CallExpression,
 			AssignmentExpression,
+			BinaryExpression,
 		},
 	}
 }

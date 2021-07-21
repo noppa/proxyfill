@@ -31,4 +31,12 @@ describe('proxyfill Babel plugin', () => {
 	it('should not transform direct function calls', () => {
 		expect(traverse('bar()')).toMatchSnapshot()
 	})
+	it('should transform in operator usage', () => {
+		expect(
+			traverse(`
+			foo in bar
+			'foo' in bar
+		`)
+		).toMatchSnapshot()
+	})
 })
