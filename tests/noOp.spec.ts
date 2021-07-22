@@ -1,3 +1,4 @@
+// import {spyOn} from 'jest-mock'
 import {Proxy, get, set, invoke} from '../src/runtime'
 
 describe('proxyfill runtime without installed traps', () => {
@@ -27,9 +28,9 @@ describe('proxyfill runtime without installed traps', () => {
 			},
 		}
 
-		spyOn(proxyBase, 'foo').and.callThrough()
-		spyOn(bPrivateApi, '_getB').and.callThrough()
-		spyOn(bPrivateApi, '_setB').and.callThrough()
+		jest.spyOn(proxyBase, 'foo')
+		jest.spyOn(bPrivateApi, '_getB')
+		jest.spyOn(bPrivateApi, '_setB')
 	})
 	function runBasicGetterTests(obj: any, original = proxyBase) {
 		expect(get(obj, 'a')).toBe(42)

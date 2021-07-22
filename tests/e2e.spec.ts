@@ -21,10 +21,21 @@ describe('runtime behavior of generated code', () => {
 			const transpiledSource = traverse(rawSource, {
 				importStyle: 'commonjs',
 			})
-			new Function('require', 'RESULT', transpiledSource)(
-				requireFromScript,
-				result
-			)
+			try {
+				new Function('require', 'RESULT', transpiledSource)(
+					requireFromScript,
+					result
+				)
+			} catch (err) {
+				console.warn(
+					[
+						JSON.stringify(err && err.message),
+						'Note: The second argument to mkTest gets evaluated with new Function' +
+							', so any references to outside JavaScript may throw for being out of scope',
+					].join('\n')
+				)
+				throw err
+			}
 			expect(result.value).toEqual(expectedResult)
 			if (!options?.disableNativeProxyCheck) {
 				// As a sanity check, also run the test with actual Proxy to make
@@ -59,12 +70,9 @@ describe('runtime behavior of generated code', () => {
 		)
 	})
 	describe('basic functionality', () => {
-		// join(1, "foo", true)
-		// prints "1, foo, true"
-		const join = (...arr: any[]) => arr.join(', ')
 		it(
 			'should call "get" trap to get property',
-			mkTest('aa2', () => {
+			mkTest(['a', 'a', 2], () => {
 				let calls = 0
 				const proxy: any = new Proxy(
 					{foo: 'b'},
@@ -75,12 +83,12 @@ describe('runtime behavior of generated code', () => {
 						},
 					}
 				)
-				return join(proxy.foo, proxy.bar, calls)
+				return [proxy.foo, proxy.bar, calls]
 			})
 		)
 		it(
 			'should call "has" trap for in-operator',
-			mkTest('false, true, 2, true', () => {
+			mkTest([false, true, 2, true], () => {
 				let calls = 0
 				const obj = {foo: 1}
 				let _target: null | typeof obj = null
@@ -91,7 +99,7 @@ describe('runtime behavior of generated code', () => {
 						return string === 'baz'
 					},
 				})
-				return join('foo' in proxy, 'baz' in proxy, calls, _target === obj)
+				return ['foo' in proxy, 'baz' in proxy, calls, _target === obj]
 			})
 		)
 	})
