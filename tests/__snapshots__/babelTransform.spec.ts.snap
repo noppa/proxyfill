@@ -6,6 +6,7 @@ exports[`proxyfill Babel plugin should not transform direct function calls 1`] =
 	get as _proxyfillRuntime$get,
 	set as _proxyfillRuntime$set,
 	invoke as _proxyfillRuntime$invoke,
+	has as _proxyfillRuntime$has,
 } from 'proxyfill/runtime'
 bar()
 "
@@ -17,6 +18,7 @@ exports[`proxyfill Babel plugin should transform computed getters 1`] = `
 	get as _proxyfillRuntime$get,
 	set as _proxyfillRuntime$set,
 	invoke as _proxyfillRuntime$invoke,
+	has as _proxyfillRuntime$has,
 } from 'proxyfill/runtime'
 
 _proxyfillRuntime$get(foo, 0)
@@ -33,6 +35,7 @@ exports[`proxyfill Babel plugin should transform computed setters 1`] = `
 	get as _proxyfillRuntime$get,
 	set as _proxyfillRuntime$set,
 	invoke as _proxyfillRuntime$invoke,
+	has as _proxyfillRuntime$has,
 } from 'proxyfill/runtime'
 
 _proxyfillRuntime$set(foo, 0, 42)
@@ -49,6 +52,7 @@ exports[`proxyfill Babel plugin should transform getters 1`] = `
 	get as _proxyfillRuntime$get,
 	set as _proxyfillRuntime$set,
 	invoke as _proxyfillRuntime$invoke,
+	has as _proxyfillRuntime$has,
 } from 'proxyfill/runtime'
 
 _proxyfillRuntime$get(foo, 'bar')
@@ -61,8 +65,12 @@ exports[`proxyfill Babel plugin should transform in operator usage 1`] = `
 	get as _proxyfillRuntime$get,
 	set as _proxyfillRuntime$set,
 	invoke as _proxyfillRuntime$invoke,
+	has as _proxyfillRuntime$has,
 } from 'proxyfill/runtime'
-foo in bar
+
+_proxyfillRuntime$has(foo, bar)
+
+_proxyfillRuntime$has('foo', bar)
 "
 `;
 
@@ -72,6 +80,7 @@ exports[`proxyfill Babel plugin should transform method calls 1`] = `
 	get as _proxyfillRuntime$get,
 	set as _proxyfillRuntime$set,
 	invoke as _proxyfillRuntime$invoke,
+	has as _proxyfillRuntime$has,
 } from 'proxyfill/runtime'
 
 _proxyfillRuntime$invoke(foo, 'bar', [])
@@ -84,6 +93,7 @@ exports[`proxyfill Babel plugin should transform setters 1`] = `
 	get as _proxyfillRuntime$get,
 	set as _proxyfillRuntime$set,
 	invoke as _proxyfillRuntime$invoke,
+	has as _proxyfillRuntime$has,
 } from 'proxyfill/runtime'
 
 _proxyfillRuntime$set(foo, 'bar', 42)
