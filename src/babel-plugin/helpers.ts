@@ -1,6 +1,6 @@
 import * as t from '@babel/types'
 import {NodePath} from '@babel/traverse'
-import {IgnoredPropertiesConfig, VisitorState} from './types'
+import {IgnoredPropertiesConfig} from './types'
 import {namespaceName} from './constants'
 
 type PropertyInfo = {

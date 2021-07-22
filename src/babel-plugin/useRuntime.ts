@@ -2,7 +2,6 @@ import * as t from '@babel/types'
 import {assertNotPrivateApiProp} from '../runtime/assertNotPrivateApiProp'
 import {toNamedImport} from './constants'
 import type {RuntimeFunctions} from '../runtime'
-import type {IgnoredPropertiesConfig} from './types'
 
 export type ParameterExpression = t.Expression | t.SpreadElement
 

@@ -1,13 +1,8 @@
 import * as t from '@babel/types'
 import {NodePath} from '@babel/traverse'
-import {callRuntime, ParameterExpression} from './useRuntime'
-import {getPropertyOfMember} from './helpers'
-import {VisitorState} from './types'
+import {callRuntime} from './useRuntime'
 
-export default function BinaryExpression(
-	path: NodePath<t.BinaryExpression>,
-	{opts}: VisitorState
-) {
+export default function BinaryExpression(path: NodePath<t.BinaryExpression>) {
 	if (path.node.operator !== 'in') {
 		return
 	}

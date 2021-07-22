@@ -5,7 +5,7 @@ import BinaryExpression from './binaryExpression'
 
 import type * as Babel from '@babel/core'
 import template from '@babel/template'
-import {ProxyfillBabelPluginOptions, VisitorState} from './types'
+import {VisitorState} from './types'
 import {namespaceName, toNamedImport} from './constants'
 import {RuntimeFunctions} from '../runtime'
 import invalidValue from '../utils/invalidValue'

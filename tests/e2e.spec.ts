@@ -1,5 +1,4 @@
 import traverse from './traverse'
-import vm from 'vm'
 import * as proxyfillRuntime from '../src/runtime'
 
 describe('runtime behavior of generated code', () => {
@@ -22,14 +21,11 @@ describe('runtime behavior of generated code', () => {
 			const transpiledSource = traverse(rawSource, {
 				importStyle: 'commonjs',
 			})
-			// console.log(testCode.name + ': ' + transpiledSource)
 			new Function('require', 'RESULT', transpiledSource)(
 				requireFromScript,
 				result
 			)
-
 			expect(result.value).toEqual(expectedResult)
-
 			if (!options?.disableNativeProxyCheck) {
 				// As a sanity check, also run the test with actual Proxy to make
 				// sure the test expectation is correct.
@@ -42,7 +38,6 @@ describe('runtime behavior of generated code', () => {
 		}
 		return runTest
 	}
-
 	describe('meta tests for e2e', () => {
 		// Sanity check that our test setup works
 		it(
@@ -63,29 +58,50 @@ describe('runtime behavior of generated code', () => {
 			)
 		)
 	})
-
 	describe('basic functionality', () => {
+		// join(1, "foo", true)
+		// prints "1, foo, true"
+		const join = (...arr: any[]) => arr.join(', ')
 		it(
-			'should call proxy to get property',
-			mkTest('aa', () => {
-				const obj = {foo: 'b'}
+			'should call "get" trap to get property',
+			mkTest('aa2', () => {
+				let calls = 0
+				const proxy: any = new Proxy(
+					{foo: 'b'},
+					{
+						get() {
+							calls++
+							return 'a'
+						},
+					}
+				)
+				return join(proxy.foo, proxy.bar, calls)
+			})
+		)
+		it(
+			'should call "has" trap for in-operator',
+			mkTest('false, true, 2, true', () => {
+				let calls = 0
+				const obj = {foo: 1}
+				let _target: null | typeof obj = null
 				const proxy: any = new Proxy(obj, {
-					get() {
-						return 'a'
+					has(target, string) {
+						calls++
+						_target = target
+						return string === 'baz'
 					},
 				})
-				return proxy.foo + proxy.bar
+				return join('foo' in proxy, 'baz' in proxy, calls, _target === obj)
 			})
 		)
 	})
-
 	describe('polyfilled built-in functions', () => {
 		it(
 			'should go through Proxy when calling Object.assign',
 			mkTest({foo: 3, bar: 4} as {foo: number; bar?: number}, () => {
 				const obj = {foo: 1}
 				const proxy = new Proxy(obj, {
-					set(target, key, value) {
+					set(target: any, key, value) {
 						target[key] = value + 1
 						return true
 					},
@@ -118,7 +134,6 @@ describe('runtime behavior of generated code', () => {
 				return {called, hasFoo, hasBar}
 			})
 		)
-
 		it(
 			'should pass Array.isArray check',
 			mkTest(true, () => {

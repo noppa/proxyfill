@@ -5,8 +5,15 @@
 		}
 	],
 	"editor.formatOnSave": true,
-	"editor.defaultFormatter": "prettier",
+	"editor.defaultFormatter": "vscode.typescript-language-features",
 	"editor.codeActionsOnSave": {
-		"source.fixAll": true
+		"source.fixAll": true,
+		"source.fixAll.eslint.eslint": true
+	},
+	"search.exclude": {
+		"**/node_modules": true,
+		"**/bower_components": true,
+		"**/*.code-search": true,
+		"test262/test262": true
 	}
 }
