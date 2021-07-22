@@ -237,7 +237,7 @@ function normalizeProperty(propertyName: any): string | symbol {
 		return propertyName
 	}
 
-	return String(propertyName)
+	return '' + propertyName
 }
 
 /**
@@ -312,7 +312,6 @@ export function set(
 	value: unknown
 ): unknown {
 	const propName = normalizeProperty(property)
-
 	const api = getProxyfillApi(obj)
 
 	if (api) {
@@ -338,7 +337,20 @@ export function set(
 }
 
 export function has(property: unknown, obj: PossiblyProxy): boolean {
-	return false // TODO
+	const propName = normalizeProperty(property)
+	const api = getProxyfillApi(obj)
+
+	if (api) {
+		assertNotRevoked(api, 'has')
+		const handlers = api.handler
+		const hasHandler = handlers.has
+		if (hasHandler) {
+			return !!hasHandler.call(handlers, api.target, propName)
+		}
+		obj = api.target
+	}
+
+	return (property as any) in (obj as any)
 }
 
 export type RuntimeFunctions = {
