@@ -4,8 +4,7 @@
 			"mode": "auto"
 		}
 	],
-	"editor.formatOnSave": true,
-	"editor.defaultFormatter": "vscode.typescript-language-features",
+	"editor.formatOnSave": false,
 	"editor.codeActionsOnSave": {
 		"source.fixAll": true,
 		"source.fixAll.eslint.eslint": true

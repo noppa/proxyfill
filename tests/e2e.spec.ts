@@ -9,7 +9,7 @@ describe('runtime behavior of generated code', () => {
 	) {
 		function runTest() {
 			function requireFromScript(moduleName: string) {
-				if (moduleName === 'proxyfill/runtime') {
+				if (moduleName.startsWith('proxyfill/runtime')) {
 					return proxyfillRuntime
 				}
 				throw new Error('Unknown module ' + moduleName)

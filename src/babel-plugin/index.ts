@@ -36,12 +36,13 @@ const namedImportsTemplate =
 	';'
 
 const importTemplate = template(`
-  import * as ${namespaceName} from 'proxyfill/runtime';
+  import * as ${namespaceName} from 'proxyfill/runtime.mjs';
 	var ${namedImportsTemplate}
 `)
 
 const requireTemplate = template(
-	`var ${namespaceName} = require('proxyfill/runtime'), ` + namedImportsTemplate
+	`var ${namespaceName} = require('proxyfill/runtime.js'), ` +
+		namedImportsTemplate
 )
 
 export default function babelPluginProxyfill(): Babel.PluginObj<VisitorState> {

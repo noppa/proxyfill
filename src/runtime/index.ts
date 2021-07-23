@@ -10,8 +10,8 @@
  */
 
 import {assertNotPrivateApiProp} from './assertNotPrivateApiProp'
-import type {ProxyPrivateApiContainer, ProxyfillPrivateApi} from './constants'
 import getGlobal from './getGlobal'
+import type {ProxyPrivateApiContainer, ProxyfillPrivateApi} from './constants'
 
 /* eslint-disable prefer-rest-params */
 /* eslint-disable @typescript-eslint/ban-types */
@@ -28,13 +28,14 @@ const globalContext = getGlobal()
 const {bind, apply} = isObject
 const {slice} = []
 const Object$hasOwnProperty = {}.hasOwnProperty
+const Object = globalContext.Object
 const {
 	assign: Object$assign,
 	defineProperty: Object$defineProperty,
 	keys: Object$keys,
 	getOwnPropertyNames: Object$getOwnPropertyNames,
 	getOwnPropertyDescriptor: Object$getOwnPropertyDescriptor,
-} = globalContext.Object
+} = Object
 const {ownKeys: Reflect$ownKeys} = Reflect
 
 /**

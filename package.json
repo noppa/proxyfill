@@ -40,7 +40,8 @@
 		"pretest262": "rollup -c src/runtime/test262-rollup.config.js",
 		"test262": "npx test262-harness --preprocessor test262/preprocessor.js --test262Dir test262/test262 --features Proxy test262/test262/test/built-ins/Proxy/apply/null-handler.js",
 		"typescript": "tsc --noEmit",
-		"build:runtime": "rollup -c src/runtime/rollup.config.js"
+		"build:runtime": "rollup -c src/runtime/rollup.config.js",
+		"build": "npm run build:runtime"
 	},
 	"repository": {
 		"type": "git",
@@ -51,5 +52,10 @@
 	"bugs": {
 		"url": "https://github.com/noppa/proxyfill/issues"
 	},
-	"homepage": "https://github.com/noppa/proxyfill#readme"
+	"homepage": "https://github.com/noppa/proxyfill#readme",
+	"files": [
+		"runtime.js",
+		"runtime-global.js",
+		"runtime.mjs"
+	]
 }
