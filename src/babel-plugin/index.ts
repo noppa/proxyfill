@@ -25,25 +25,23 @@ const runtimeApiFunctionNames = Object.keys(runtimeFunctionsMap)
 // Also should rename all local variable/function declarations named "Proxy"
 // so they don't conflict.
 
+const namedImportsTemplate =
+	`Proxy = ${namespaceName}.Proxy, ` +
+	runtimeApiFunctionNames
+		.map(
+			(exportedName) =>
+				`${toNamedImport(exportedName)} = ${namespaceName}.${exportedName}`
+		)
+		.join(', ') +
+	';'
+
 const importTemplate = template(`
-  import {
-		Proxy,
-		${runtimeApiFunctionNames
-			.map((name) => `${name} as ${toNamedImport(name)}`)
-			.join(', ')}
-	} from 'proxyfill/runtime'
+  import * as ${namespaceName} from 'proxyfill/runtime';
+	var ${namedImportsTemplate}
 `)
 
 const requireTemplate = template(
-	`var ${namespaceName} = require('proxyfill/runtime'), ` +
-		`Proxy = ${namespaceName}.Proxy, ` +
-		runtimeApiFunctionNames
-			.map(
-				(exportedName) =>
-					`${toNamedImport(exportedName)} = ${namespaceName}['${exportedName}']`
-			)
-			.join(', ') +
-		';'
+	`var ${namespaceName} = require('proxyfill/runtime'), ` + namedImportsTemplate
 )
 
 export default function babelPluginProxyfill(): Babel.PluginObj<VisitorState> {
