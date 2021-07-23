@@ -157,9 +157,10 @@ describe('runtime behavior of generated code', () => {
 						ownKeys() {
 							return ['foo', 'bar', Symbol('baz')]
 						},
-						getOwnPropertyDescriptor(key) {
+						getOwnPropertyDescriptor(target, key: string | symbol) {
 							return {
 								enumerable: key !== 'bar',
+								configurable: true,
 							}
 						},
 					}
