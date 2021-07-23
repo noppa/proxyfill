@@ -1,7 +1,7 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`proxyfill Babel plugin should not transform direct function calls 1`] = `
-"import * as _proxyfillRuntime from 'proxyfill/runtime'
+"import * as _proxyfillRuntime from 'proxyfill/runtime.mjs'
 var Proxy = _proxyfillRuntime.Proxy,
 	_proxyfillRuntime$get = _proxyfillRuntime.get,
 	_proxyfillRuntime$set = _proxyfillRuntime.set,
@@ -12,7 +12,7 @@ bar()
 `;
 
 exports[`proxyfill Babel plugin should transform computed getters 1`] = `
-"import * as _proxyfillRuntime from 'proxyfill/runtime'
+"import * as _proxyfillRuntime from 'proxyfill/runtime.mjs'
 var Proxy = _proxyfillRuntime.Proxy,
 	_proxyfillRuntime$get = _proxyfillRuntime.get,
 	_proxyfillRuntime$set = _proxyfillRuntime.set,
@@ -28,7 +28,7 @@ _proxyfillRuntime$get(foo, _proxyfillRuntime$get(bar, 'baz'))
 `;
 
 exports[`proxyfill Babel plugin should transform computed setters 1`] = `
-"import * as _proxyfillRuntime from 'proxyfill/runtime'
+"import * as _proxyfillRuntime from 'proxyfill/runtime.mjs'
 var Proxy = _proxyfillRuntime.Proxy,
 	_proxyfillRuntime$get = _proxyfillRuntime.get,
 	_proxyfillRuntime$set = _proxyfillRuntime.set,
@@ -44,7 +44,7 @@ _proxyfillRuntime$set(foo, _proxyfillRuntime$get(bar, 'baz'), 42)
 `;
 
 exports[`proxyfill Babel plugin should transform getters 1`] = `
-"import * as _proxyfillRuntime from 'proxyfill/runtime'
+"import * as _proxyfillRuntime from 'proxyfill/runtime.mjs'
 var Proxy = _proxyfillRuntime.Proxy,
 	_proxyfillRuntime$get = _proxyfillRuntime.get,
 	_proxyfillRuntime$set = _proxyfillRuntime.set,
@@ -56,7 +56,7 @@ _proxyfillRuntime$get(foo, 'bar')
 `;
 
 exports[`proxyfill Babel plugin should transform in operator usage 1`] = `
-"import * as _proxyfillRuntime from 'proxyfill/runtime'
+"import * as _proxyfillRuntime from 'proxyfill/runtime.mjs'
 var Proxy = _proxyfillRuntime.Proxy,
 	_proxyfillRuntime$get = _proxyfillRuntime.get,
 	_proxyfillRuntime$set = _proxyfillRuntime.set,
@@ -70,7 +70,7 @@ _proxyfillRuntime$has('foo', bar)
 `;
 
 exports[`proxyfill Babel plugin should transform method calls 1`] = `
-"import * as _proxyfillRuntime from 'proxyfill/runtime'
+"import * as _proxyfillRuntime from 'proxyfill/runtime.mjs'
 var Proxy = _proxyfillRuntime.Proxy,
 	_proxyfillRuntime$get = _proxyfillRuntime.get,
 	_proxyfillRuntime$set = _proxyfillRuntime.set,
@@ -82,7 +82,7 @@ _proxyfillRuntime$invoke(foo, 'bar', [])
 `;
 
 exports[`proxyfill Babel plugin should transform setters 1`] = `
-"import * as _proxyfillRuntime from 'proxyfill/runtime'
+"import * as _proxyfillRuntime from 'proxyfill/runtime.mjs'
 var Proxy = _proxyfillRuntime.Proxy,
 	_proxyfillRuntime$get = _proxyfillRuntime.get,
 	_proxyfillRuntime$set = _proxyfillRuntime.set,
