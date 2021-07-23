@@ -148,5 +148,24 @@ describe('runtime behavior of generated code', () => {
 				return Array.isArray(new Proxy([], {}))
 			})
 		)
+		it(
+			'should call polyfilled Object.keys',
+			mkTest(['foo'], () => {
+				const p = new Proxy(
+					{},
+					{
+						ownKeys() {
+							return ['foo', 'bar', Symbol('baz')]
+						},
+						getOwnPropertyDescriptor(key) {
+							return {
+								enumerable: key !== 'bar',
+							}
+						},
+					}
+				)
+				return Object.keys(p)
+			})
+		)
 	})
 })

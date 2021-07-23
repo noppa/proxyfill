@@ -16,7 +16,9 @@ import getGlobal from './getGlobal'
 /* eslint-disable prefer-rest-params */
 /* eslint-disable @typescript-eslint/ban-types */
 
-function isObject(val: unknown): val is Record<any, any> | Function {
+function isObject(
+	val: unknown
+): val is NonNullable<{} | Function | PossiblyProxy> {
 	if (!val) return false
 	const t = typeof val
 	return t === 'object' || t === 'function'
@@ -25,12 +27,29 @@ function isObject(val: unknown): val is Record<any, any> | Function {
 const globalContext = getGlobal()
 const {bind, apply} = isObject
 const {slice} = []
+const Object$hasOwnProperty = {}.hasOwnProperty
 const {
-	assign,
-	defineProperty,
-	hasOwnProperty: Object$hasOwnProperty,
+	assign: Object$assign,
+	defineProperty: Object$defineProperty,
+	keys: Object$keys,
+	getOwnPropertyNames: Object$getOwnPropertyNames,
 	getOwnPropertyDescriptor: Object$getOwnPropertyDescriptor,
 } = globalContext.Object
+const {ownKeys: Reflect$ownKeys} = Reflect
+
+/**
+ * toString implementation that does not call any traps if `target` is a Proxy
+ */
+function toString(target: unknown): string {
+	if (isObject(target)) {
+		const api = getProxyfillApi(target as PossiblyProxy)
+		if (api) {
+			const typeStr = typeof target === 'function' ? 'Function' : 'Object'
+			return `[object ${typeStr}]`
+		}
+	}
+	return '' + target
+}
 
 // Custom implementations for some of the JS standard library functions
 // that we need to polyfill / ponyfill to get things working correctly.
@@ -51,16 +70,85 @@ const getOwnPropertyDescriptorPolyfill = function getOwnPropertyDescriptor(
 		if (getOwnPropertyDescriptor) {
 			return getOwnPropertyDescriptor.call(handler, api.target, key)
 		}
+		object = api.target
 	}
 	return Object$getOwnPropertyDescriptor(object, key)
+}
+
+function getOwnKeysFromProxy(
+	api: ProxyfillPrivateApi,
+	predicate: (key: string | symbol, object: PossiblyProxy) => boolean,
+	object: PossiblyProxy
+): (string | symbol)[] {
+	assertNotRevoked(api, 'ownKeys')
+	const {handler} = api
+	const {ownKeys} = handler
+	if (ownKeys) {
+		const keys = ownKeys.call(handler, api.target)
+		// TODO: Frozen & sealed target objects have limitations on keys that handler should
+		// return and we should throw if they are not correct
+		const validKeys = []
+		for (let i = 0, n = keys.length; i < n; i++) {
+			const key = keys[i]
+			const type = typeof key
+			if (type === 'string' || type === 'symbol') {
+				if (predicate(key, object)) {
+					validKeys.push(key)
+				}
+			} else {
+				throw new TypeError(`${toString(key)} is not a valid property name`)
+			}
+		}
+		return validKeys
+	}
+	return Reflect$ownKeys(api.target)
+}
+
+function isOwnEnumerableStringKey(
+	key: string | symbol,
+	object: PossiblyProxy
+): boolean {
+	if (typeof key !== 'string') return false
+	const desc = getOwnPropertyDescriptorPolyfill(object, key)
+	return desc !== undefined && desc.enumerable === true
+}
+
+function isString(key: string | symbol): key is string {
+	return typeof key === 'string'
+}
+
+const objectKeysPolyfill = function keys(object: PossiblyProxy): string[] {
+	const api = getProxyfillApi(object)
+	if (api) {
+		return getOwnKeysFromProxy(
+			api,
+			isOwnEnumerableStringKey,
+			object
+		) as string[]
+	}
+	return Object$keys(object as {})
+}
+
+const getOwnPropertyNamesPolyfill = function getOwnPropertyNames(
+	object: PossiblyProxy
+) {
+	const api = getProxyfillApi(object)
+	if (api) {
+		return getOwnKeysFromProxy(api, isString, object)
+	}
+	return Object$getOwnPropertyNames(object)
+}
+
+function hasOwnPropertyStatic(object: PossiblyProxy, key: string): boolean {
+	const descr = getOwnPropertyDescriptorPolyfill(object, key)
+	return !!descr
 }
 
 const hasOwnPropertyPolyfill = function hasOwnProperty(
 	this: PossiblyProxy,
 	key: string
 ) {
-	const descr = getOwnPropertyDescriptorPolyfill(this, key)
-	return !!descr
+	return hasOwnPropertyStatic(this, key)
 }
 
 const assignPolyfill: typeof Object['assign'] = function assign(
@@ -74,7 +162,7 @@ const assignPolyfill: typeof Object['assign'] = function assign(
 	// Optimization for the common case: two arguments, neither of which
 	// is Proxy, just delegate to built-in Object.assign
 	if (arguments.length === 2 && !isProxy(target) && !isProxy(source)) {
-		return assign(target, source)
+		return Object$assign(target, source)
 	}
 
 	const to = Object(target)
@@ -84,7 +172,7 @@ const assignPolyfill: typeof Object['assign'] = function assign(
 
 		if (nextSource !== null && nextSource !== undefined) {
 			for (const nextKey in nextSource) {
-				if (Object$hasOwnProperty.call(nextSource, nextKey)) {
+				if (hasOwnPropertyStatic(nextSource, nextKey)) {
 					set(to, nextKey, get(nextSource, nextKey))
 				}
 			}
@@ -104,11 +192,19 @@ const standardLibraryPolyfills: readonly PolyfillDef[] = [
 		mod: getOwnPropertyDescriptorPolyfill,
 	},
 	{
+		orig: Object$getOwnPropertyNames,
+		mod: getOwnPropertyNamesPolyfill,
+	},
+	{
+		orig: Object$keys,
+		mod: objectKeysPolyfill,
+	},
+	{
 		orig: Object$hasOwnProperty,
 		mod: hasOwnPropertyPolyfill,
 	},
 	{
-		orig: assign,
+		orig: Object$assign,
 		mod: assignPolyfill,
 	},
 ]
@@ -160,10 +256,10 @@ function createProxy(
 				return target.apply(this, args)
 			}
 		}
-		assign(proxy, proxyPrivateApi)
+		Object$assign(proxy, proxyPrivateApi)
 	} else if (target instanceof Array) {
 		proxy = []
-		assign(proxy, proxyPrivateApi)
+		Object$assign(proxy, proxyPrivateApi)
 	} else {
 		proxy = proxyPrivateApi
 	}
@@ -198,7 +294,7 @@ function createProxy(
 
 	for (let i = 0; i < runtimeTraps.length; i++) {
 		const trap = runtimeTraps[i]
-		defineProperty(proxy, trap, {
+		Object$defineProperty(proxy, trap, {
 			get: () => get(proxy, trap),
 		})
 	}
