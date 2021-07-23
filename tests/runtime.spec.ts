@@ -1,6 +1,17 @@
 import {Proxy, get, set, invoke} from '../src/runtime'
 
 describe('proxyfill runtime', () => {
+	describe('constructing Proxy', () => {
+		it('should require both constructor args to be objects', () => {
+			const errorMsg =
+				'Cannot create proxy with a non-object as target or handler'
+			expect(() => new Proxy(42 as any, {})).toThrowError(errorMsg)
+			expect(() => new (Proxy as any)({})).toThrowError(errorMsg)
+			expect(() => new (Proxy as any)({}, null)).toThrowError(errorMsg)
+			// Function is allowed in the target-argument
+			expect(() => new Proxy(() => {}, {})).not.toThrow()
+		})
+	})
 	describe('calling handlers with correct arguments', () => {
 		it('should stringify non-symbol properties for getter', () => {
 			const obj = {foo: 1}

@@ -16,7 +16,7 @@ import getGlobal from './getGlobal'
 /* eslint-disable prefer-rest-params */
 /* eslint-disable @typescript-eslint/ban-types */
 
-function isObject(val: unknown) {
+function isObject(val: unknown): val is Record<any, any> | Function {
 	if (!val) return false
 	const t = typeof val
 	return t === 'object' || t === 'function'
@@ -208,13 +208,7 @@ function createProxy(
 type PossiblyProxy = null | undefined | Partial<ProxyPrivateApiContainer>
 
 function getProxyfillApi(obj: PossiblyProxy): null | ProxyfillPrivateApi {
-	const type = typeof obj
-	return (
-		(((type === 'object' && obj !== null) || type === 'function') &&
-			// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-			obj!.__proxyfill) ||
-		null
-	)
+	return (isObject(obj) && obj.__proxyfill) || null
 }
 
 function isProxy(obj: PossiblyProxy): obj is ProxyPrivateApiContainer {
