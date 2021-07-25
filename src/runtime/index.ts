@@ -32,6 +32,7 @@ const {
 	defineProperties: Object$defineProperties,
 	keys: Object$keys,
 	getOwnPropertyNames: Object$getOwnPropertyNames,
+	getOwnPropertySymbols: Object$getOwnPropertySymbols,
 	getOwnPropertyDescriptor: Object$getOwnPropertyDescriptor,
 } = Object
 const {ownKeys: Reflect$ownKeys, defineProperty: Reflect$defineProperty} =
@@ -142,8 +143,7 @@ function getOwnKeysFromProxy(
 		const validKeys = []
 		for (let i = 0, n = keys.length; i < n; i++) {
 			const key = keys[i]
-			const type = typeof key
-			if (type === 'string' || type === 'symbol') {
+			if (isString(key) || isSymbol(key)) {
 				if (predicate(key, object)) {
 					validKeys.push(key)
 				}
@@ -169,6 +169,11 @@ function isString(key: string | symbol): key is string {
 	return typeof key === 'string'
 }
 
+function isSymbol(key: string | symbol): key is symbol {
+	// TODO: Handle polyfilled symbols, look into what e.g. core-js symbols look like
+	return typeof key === 'symbol'
+}
+
 const objectKeysPolyfill = function keys(object: PossiblyProxy): string[] {
 	const api = getProxyfillApi(object)
 	if (api) {
@@ -187,6 +192,16 @@ const getOwnPropertyNamesPolyfill = function getOwnPropertyNames(
 	const api = getProxyfillApi(object)
 	if (api) {
 		return getOwnKeysFromProxy(api, isString, object)
+	}
+	return Object$getOwnPropertyNames(object)
+}
+
+const getOwnPropertySymbolsPolyfill = function getOwnPropertyNames(
+	object: PossiblyProxy
+) {
+	const api = getProxyfillApi(object)
+	if (api) {
+		return getOwnKeysFromProxy(api, isSymbol, object)
 	}
 	return Object$getOwnPropertyNames(object)
 }
@@ -258,6 +273,10 @@ const standardLibraryPolyfills: readonly PolyfillDef[] = [
 	{
 		orig: Object$getOwnPropertyNames,
 		mod: getOwnPropertyNamesPolyfill,
+	},
+	{
+		orig: Object$getOwnPropertySymbols,
+		mod: getOwnPropertySymbolsPolyfill,
 	},
 	{
 		orig: Object$keys,
