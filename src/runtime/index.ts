@@ -10,7 +10,6 @@
  */
 
 import {assertNotPrivateApiProp} from './assertNotPrivateApiProp'
-import getGlobal from './getGlobal'
 import type {ProxyPrivateApiContainer, ProxyfillPrivateApi} from './constants'
 
 /* eslint-disable prefer-rest-params */
@@ -24,19 +23,19 @@ function isObject(
 	return t === 'object' || t === 'function'
 }
 
-const globalContext = getGlobal()
 const {bind, apply} = isObject
 const {slice} = []
 const Object$hasOwnProperty = {}.hasOwnProperty
-const Object = globalContext.Object
 const {
 	assign: Object$assign,
 	defineProperty: Object$defineProperty,
+	defineProperties: Object$defineProperties,
 	keys: Object$keys,
 	getOwnPropertyNames: Object$getOwnPropertyNames,
 	getOwnPropertyDescriptor: Object$getOwnPropertyDescriptor,
 } = Object
-const {ownKeys: Reflect$ownKeys} = Reflect
+const {ownKeys: Reflect$ownKeys, defineProperty: Reflect$defineProperty} =
+	Reflect
 
 /**
  * toString implementation that does not call any traps if `target` is a Proxy
@@ -49,11 +48,63 @@ function toString(target: unknown): string {
 			return `[object ${typeStr}]`
 		}
 	}
-	return '' + target
+	return String(target)
 }
 
 // Custom implementations for some of the JS standard library functions
 // that we need to polyfill / ponyfill to get things working correctly.
+
+const reflectDefinePropertyPolyfill = function defineProperty(
+	object: PossiblyProxy,
+	key: string | symbol,
+	desc: PropertyDescriptor
+): boolean {
+	const api = getProxyfillApi(object)
+	if (api) {
+		const {handler} = api
+		const {defineProperty} = handler
+		if (defineProperty) {
+			const propName = normalizeProperty(key)
+			// TODO: Normalize property descriptor "desc"
+			return defineProperty.call(handler, api.target, propName, desc)
+		}
+		object = api.target
+	}
+	return Reflect$defineProperty(object as object, key, desc)
+}
+
+const objectDefinePropertyPolyfill = function defineProperty(
+	object: PossiblyProxy,
+	key: string | symbol,
+	descr: PropertyDescriptor
+): PossiblyProxy {
+	const success = reflectDefinePropertyPolyfill(object, key, descr)
+	if (!success) {
+		throw new TypeError(
+			`'defineProperty' on proxy: trap returned falsish for property '${toString(
+				key
+			)}'`
+		)
+	}
+	return object
+}
+
+const objectDefinePropertiesPolyfill = function defineProperties(
+	object: PossiblyProxy,
+	descs: PropertyDescriptorMap
+): PossiblyProxy {
+	const api = getProxyfillApi(object)
+	const descsApi = getProxyfillApi(descs)
+	if (api || descsApi) {
+		const keys = objectKeysPolyfill(descs)
+		for (let i = 0, n = keys.length; i < n; i++) {
+			const key = keys[i]
+			objectDefinePropertyPolyfill(object, key, descs[i])
+		}
+		return object
+	}
+	return Object$defineProperties(object, descs)
+}
 
 const getOwnPropertyDescriptorPolyfill = function getOwnPropertyDescriptor(
 	object: PossiblyProxy,
@@ -188,6 +239,18 @@ type PolyfillDef = {
 }
 
 const standardLibraryPolyfills: readonly PolyfillDef[] = [
+	{
+		orig: Object$defineProperty,
+		mod: objectDefinePropertyPolyfill,
+	},
+	{
+		orig: Reflect$defineProperty,
+		mod: reflectDefinePropertyPolyfill,
+	},
+	{
+		orig: Object$defineProperties,
+		mod: objectDefinePropertiesPolyfill,
+	},
 	{
 		orig: Object$getOwnPropertyDescriptor,
 		mod: getOwnPropertyDescriptorPolyfill,
@@ -414,7 +477,7 @@ export function set(
 			if (!result) {
 				// Assume strict mode and throw for failed assignment
 				throw new TypeError(
-					`'set' on proxy: trap returned falsish for property '${String(
+					`'set' on proxy: trap returned falsish for property '${toString(
 						propName
 					)}'`
 				)
