@@ -526,11 +526,17 @@ export function has(property: unknown, obj: PossiblyProxy): boolean {
 	return (property as any) in (obj as any)
 }
 
+export function deleteProperty(object: PossiblyProxy, key: unknown): boolean {
+	// TODO
+	return true
+}
+
 export type RuntimeFunctions = {
 	get: typeof get
 	invoke: typeof invoke
 	set: typeof set
 	has: typeof has
+	deleteProperty: typeof deleteProperty
 }
 
 interface IProxy {

@@ -39,4 +39,7 @@ describe('proxyfill Babel plugin', () => {
 		`)
 		).toMatchSnapshot()
 	})
+	it('should transform delete operator usage', () => {
+		expect(traverse(`delete foo.bar`)).toMatchSnapshot()
+	})
 })
