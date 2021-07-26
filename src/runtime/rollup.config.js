@@ -9,6 +9,7 @@ function config(output) {
 		plugins: [
 			typescript({
 				module: 'es2020',
+				target: 'es5',
 				sourceMap: false,
 			}),
 		],
