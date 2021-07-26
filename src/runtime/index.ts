@@ -390,7 +390,7 @@ function createProxy(
 	} else {
 		runtimeTraps = []
 	}
-	runtimeTraps.push('valueOf', 'toString')
+	runtimeTraps.push('valueOf', 'toString', 'toJSON')
 
 	for (let i = 0; i < runtimeTraps.length; i++) {
 		const trap = runtimeTraps[i]
