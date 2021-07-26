@@ -42,6 +42,7 @@ const {
 	set: Reflect$set,
 	deleteProperty: Reflect$deleteProperty,
 } = Reflect
+const NativeProxy = typeof Proxy === 'function' ? Proxy : null
 
 /**
  * toString implementation that does not call any traps if `target` is a Proxy
@@ -258,7 +259,9 @@ type PolyfillDef = {
 	mod: Function
 }
 
-const standardLibraryPolyfills: readonly PolyfillDef[] = [
+Proxy
+
+const standardLibraryPolyfills: PolyfillDef[] = [
 	{
 		orig: Object$defineProperty,
 		mod: objectDefinePropertyPolyfill,
@@ -577,7 +580,7 @@ interface IProxy {
 	revocable(target: object, handler: ProxyHandler<object>): any
 }
 
-export const Proxy: IProxy = function Proxy(
+const ProxyPolyfill: IProxy = function Proxy(
 	this: any,
 	target: object,
 	handler: ProxyHandler<object>
@@ -590,10 +593,22 @@ export const Proxy: IProxy = function Proxy(
 	return createProxy(target, handler)
 } as any
 
-Proxy.revocable = function (target: object, handler: ProxyHandler<object>) {
+ProxyPolyfill.revocable = function (
+	target: object,
+	handler: ProxyHandler<object>
+) {
 	const proxy = createProxy(target, handler)
 	function revoke() {
 		proxy.__proxyfill.revoked = true
 	}
 	return {proxy, revoke}
 }
+
+if (NativeProxy) {
+	standardLibraryPolyfills.push({
+		orig: NativeProxy,
+		mod: ProxyPolyfill,
+	})
+}
+
+export {ProxyPolyfill as Proxy}
