@@ -64,4 +64,11 @@ describe('proxyfill Babel plugin', () => {
 		`)
 		).toMatchSnapshot()
 	})
+	it('should not transform direct access to required module properties', () => {
+		expect(
+			traverse(`
+			require('foo').bar
+		`)
+		).toMatchSnapshot()
+	})
 })

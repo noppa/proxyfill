@@ -54,21 +54,23 @@ export default function babelPluginProxyfill(): Babel.PluginObj<VisitorState> {
 	return {
 		name: 'proxyfill',
 		visitor: {
-			Program(path, {opts}: VisitorState) {
-				const {node} = path
-				const {sourceFile, sourceType} = node
-				if (sourceFile && ownImportPath.test(sourceFile)) {
-					path.stop()
-					return
-				}
-				if (opts.skipImports) {
-					return
-				}
-				const importRuntime: ImportDeclaration | VariableDeclaration =
-					sourceType === 'module'
-						? (importTemplate() as any)
-						: (requireTemplate() as any)
-				path.unshiftContainer('body', importRuntime)
+			Program: {
+				exit(path, {opts}: VisitorState) {
+					const {node} = path
+					const {sourceFile, sourceType} = node
+					if (sourceFile && ownImportPath.test(sourceFile)) {
+						path.stop()
+						return
+					}
+					if (opts.skipImports) {
+						return
+					}
+					const importRuntime: ImportDeclaration | VariableDeclaration =
+						sourceType === 'module'
+							? (importTemplate() as any)
+							: (requireTemplate() as any)
+					path.unshiftContainer('body', importRuntime)
+				},
 			},
 			MemberExpression,
 			CallExpression,

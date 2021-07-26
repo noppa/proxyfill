@@ -60,16 +60,28 @@ function shouldIgnoreProperty(
 	// TODO: Even if obj is a dynamic expression, we should ignore property
 	// with config { objectIdentifierName: '*', propertyIdentifierName: 'foo' }
 	if (!t.isIdentifier(obj)) {
-		return (
-			t.isMemberExpression(obj) &&
-			t.isIdentifier(obj.property) &&
-			shouldIgnoreProperty(
-				obj.object,
+		if (t.isMemberExpression(obj)) {
+			return (
+				t.isIdentifier(obj.property) &&
+				shouldIgnoreProperty(
+					obj.object,
+					scope,
+					obj.property.name,
+					ignoredProperties
+				)
+			)
+		} else if (t.isCallExpression(obj) && t.isExpression(obj.callee)) {
+			// require('foo').bar => re-check as if it was require.bar, since
+			// that "require" will be in the list of ignored object names
+			return shouldIgnoreProperty(
+				obj.callee,
 				scope,
-				obj.property.name,
+				propName,
 				ignoredProperties
 			)
-		)
+		} else {
+			return false
+		}
 	}
 	const objName = obj.name
 
