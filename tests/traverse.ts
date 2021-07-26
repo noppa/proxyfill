@@ -1,4 +1,4 @@
-import {parse} from '@babel/parser'
+import {parse, ParserOptions} from '@babel/parser'
 import generate from '@babel/generator'
 import babelTraverse from '@babel/traverse'
 import {format} from 'prettier'
@@ -8,12 +8,14 @@ import {VisitorState} from '../src/babel-plugin/types'
 
 export default function traverse(
 	code: string,
-	opts: VisitorState['opts'] = {}
+	opts: VisitorState['opts'] = {},
+	parserOptions?: ParserOptions
 ): string {
 	const traverse = proxyfill()
 	const ast = parse(code, {
 		sourceType: 'module',
 		plugins: [],
+		...parserOptions,
 	})
 
 	babelTraverse<VisitorState>(ast, traverse.visitor, undefined, {opts})

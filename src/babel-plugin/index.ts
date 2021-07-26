@@ -10,7 +10,6 @@ import template from '@babel/template'
 import {VisitorState} from './types'
 import {namespaceName, toNamedImport} from './constants'
 import {RuntimeFunctions} from '../runtime'
-import invalidValue from '../utils/invalidValue'
 import {ImportDeclaration, VariableDeclaration} from '@babel/types'
 
 const runtimeFunctionsMap: {[k in keyof RuntimeFunctions]: 0} = {
@@ -49,29 +48,26 @@ const requireTemplate = template(
 		namedImportsTemplate
 )
 
+const ownImportPath = /proxyfill[\\/]runtime/
+
 export default function babelPluginProxyfill(): Babel.PluginObj<VisitorState> {
 	return {
 		name: 'proxyfill',
 		visitor: {
 			Program(path, {opts}: VisitorState) {
-				const {importStyle = 'esmodule'} = opts
-				let importRuntime: ImportDeclaration | VariableDeclaration
-				switch (importStyle) {
-					case 'esmodule':
-						importRuntime = importTemplate() as any
-						break
-					case 'commonjs':
-						importRuntime = requireTemplate() as any
-						break
-					case 'none':
-						return // No need to add imports at all
-					default:
-						importRuntime = invalidValue(
-							'importStyle',
-							'"esmodule", "commonjs" or "none"',
-							importStyle
-						)
+				const {node} = path
+				const {sourceFile, sourceType} = node
+				if (sourceFile && ownImportPath.test(sourceFile)) {
+					path.stop()
+					return
 				}
+				if (opts.skipImports) {
+					return
+				}
+				const importRuntime: ImportDeclaration | VariableDeclaration =
+					sourceType === 'module'
+						? (importTemplate() as any)
+						: (requireTemplate() as any)
 				path.unshiftContainer('body', importRuntime)
 			},
 			MemberExpression,

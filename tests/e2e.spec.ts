@@ -18,9 +18,7 @@ describe('runtime behavior of generated code', () => {
 				value: undefined,
 			}
 			const rawSource = `RESULT.value = (${testCode.toString()})();`
-			const transpiledSource = traverse(rawSource, {
-				importStyle: 'commonjs',
-			})
+			const transpiledSource = traverse(rawSource, {}, {sourceType: 'script'})
 			try {
 				new Function('require', 'RESULT', transpiledSource)(
 					requireFromScript,

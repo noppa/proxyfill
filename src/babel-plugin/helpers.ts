@@ -40,7 +40,13 @@ export function getPropertyOfMember(
 	}
 }
 
-const moduleMagicObjects = new Set(['module', 'require', 'import', 'process'])
+const moduleMagicObjects = new Set([
+	'module',
+	'exports',
+	'require',
+	'import',
+	'process',
+])
 
 function shouldIgnoreProperty(
 	obj: t.Expression,
