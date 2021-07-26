@@ -53,4 +53,15 @@ describe('proxyfill Babel plugin', () => {
 		`)
 		).toMatchSnapshot()
 	})
+	it('should only transform usage of require.resolve if require is a local binding', () => {
+		expect(
+			traverse(`
+			require.resolve('foo')
+			function foo() {
+				const require = {}
+				require.resolve('foo')
+			}
+		`)
+		).toMatchSnapshot()
+	})
 })

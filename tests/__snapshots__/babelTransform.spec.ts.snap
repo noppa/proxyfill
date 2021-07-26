@@ -27,6 +27,26 @@ module.exports.foo = 42
 "
 `;
 
+exports[`proxyfill Babel plugin should only transform usage of require.resolve if require is a local binding 1`] = `
+"import * as _proxyfillRuntime from 'proxyfill/runtime.mjs'
+var Proxy = _proxyfillRuntime.Proxy,
+	_proxyfillRuntime$get = _proxyfillRuntime.get,
+	_proxyfillRuntime$set = _proxyfillRuntime.set,
+	_proxyfillRuntime$invoke = _proxyfillRuntime.invoke,
+	_proxyfillRuntime$has = _proxyfillRuntime.has,
+	_proxyfillRuntime$deleteProperty = _proxyfillRuntime.deleteProperty,
+	_proxyfillRuntime$updateProperty = _proxyfillRuntime.updateProperty
+
+require.resolve('foo')
+
+function foo() {
+	const require = {}
+
+	_proxyfillRuntime$invoke(require, 'resolve', ['foo'])
+}
+"
+`;
+
 exports[`proxyfill Babel plugin should transform computed getters 1`] = `
 "import * as _proxyfillRuntime from 'proxyfill/runtime.mjs'
 var Proxy = _proxyfillRuntime.Proxy,

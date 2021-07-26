@@ -1,5 +1,5 @@
 import * as t from '@babel/types'
-import {NodePath} from '@babel/traverse'
+import {NodePath, Scope} from '@babel/traverse'
 import {IgnoredPropertiesConfig} from './types'
 import {namespaceName} from './constants'
 
@@ -15,6 +15,7 @@ export function getPropertyOfMember(
 	if (!memberExpr.isMemberExpression()) return null
 	const memberNode: t.MemberExpression = memberExpr.node
 	const {object, property, computed} = memberNode
+	const scope = memberExpr.scope
 
 	if (t.isPrivateName(property)) {
 		return null
@@ -23,12 +24,12 @@ export function getPropertyOfMember(
 	let propertyReference: t.Expression
 	if (!computed && t.isIdentifier(property)) {
 		const {name} = property
-		if (shouldIgnoreProperty(object, name, ignoredProperties)) {
+		if (shouldIgnoreProperty(object, scope, name, ignoredProperties)) {
 			return null
 		}
 		propertyReference = t.stringLiteral(name)
 	} else {
-		if (shouldIgnoreProperty(object, property, ignoredProperties)) {
+		if (shouldIgnoreProperty(object, scope, property, ignoredProperties)) {
 			return null
 		}
 		propertyReference = property
@@ -44,12 +45,15 @@ const moduleMagicObjects = new Set([
 	'module',
 	'exports',
 	'require',
+	'define',
+	'factory',
 	'import',
 	'process',
 ])
 
 function shouldIgnoreProperty(
 	obj: t.Expression,
+	scope: Scope,
 	propName: string | t.Expression,
 	ignoredProperties: undefined | null | IgnoredPropertiesConfig[]
 ): boolean {
@@ -59,7 +63,12 @@ function shouldIgnoreProperty(
 		return (
 			t.isMemberExpression(obj) &&
 			t.isIdentifier(obj.property) &&
-			shouldIgnoreProperty(obj.object, obj.property.name, ignoredProperties)
+			shouldIgnoreProperty(
+				obj.object,
+				scope,
+				obj.property.name,
+				ignoredProperties
+			)
 		)
 	}
 	const objName = obj.name
@@ -72,7 +81,7 @@ function shouldIgnoreProperty(
 		return true
 	}
 
-	if (moduleMagicObjects.has(objName)) {
+	if (moduleMagicObjects.has(objName) && !scope.hasBinding(objName)) {
 		// Don't transform module.exports, import.meta etc.
 		return true
 	}
