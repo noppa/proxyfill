@@ -449,21 +449,20 @@ export function get(obj: PossiblyProxy, property: unknown): unknown {
 	const propName = normalizeProperty(property)
 	const api = getProxyfillApi(obj)
 
-	let val: any,
-		calledHandler = false
+	let val: any
 
 	if (api) {
 		assertNotRevoked(api, 'get')
 		const handlers = api.handler
 		const getHandler = handlers.get
 		if (getHandler) {
-			calledHandler = true
 			val = getHandler.call(handlers, api.target, propName as any, obj)
+		} else {
+			val = get(api.target, propName)
 		}
-		obj = api.target
+	} else {
+		val = (obj as any)[propName]
 	}
-
-	if (!calledHandler) val = (obj as any)[propName]
 
 	for (let i = 0, n = standardLibraryPolyfills.length; i < n; i++) {
 		const p = standardLibraryPolyfills[i]
@@ -522,28 +521,30 @@ export function set(
 				)
 			}
 			return value
+		} else {
+			return set(api.target, propName, value)
 		}
-		obj = api.target
+	} else {
+		return ((obj as any)[propName] = value)
 	}
-
-	return ((obj as any)[propName] = value)
 }
 
 export function has(property: unknown, obj: PossiblyProxy): boolean {
 	const api = getProxyfillApi(obj)
+	const propName = normalizeProperty(property)
 
 	if (api) {
-		const propName = normalizeProperty(property)
 		assertNotRevoked(api, 'has')
 		const handlers = api.handler
 		const hasHandler = handlers.has
 		if (hasHandler) {
 			return !!hasHandler.call(handlers, api.target, propName)
+		} else {
+			return has(propName, api.target)
 		}
-		obj = api.target
+	} else {
+		return (propName as any) in (obj as any)
 	}
-
-	return (property as any) in (obj as any)
 }
 
 export function deleteProperty(
@@ -551,20 +552,21 @@ export function deleteProperty(
 	key: string | symbol
 ): boolean {
 	const api = getProxyfillApi(object)
+	const propName = normalizeProperty(key)
 
 	if (api) {
-		const propName = normalizeProperty(key)
 		assertNotRevoked(api, 'deleteProperty')
 		const handlers = api.handler
 		const deleteHandler = handlers.deleteProperty
 		// TODO: Assert that the object is extensible and property is configurable
 		if (deleteHandler) {
 			return !!deleteHandler.call(handlers, api.target, propName)
+		} else {
+			return deleteProperty(api.target, propName)
 		}
-		object = api.target
+	} else {
+		return delete (object as any)[propName]
 	}
-
-	return delete (object as any)[key]
 }
 
 export type RuntimeFunctions = {

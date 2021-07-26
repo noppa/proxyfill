@@ -48,6 +48,21 @@ describe('proxyfill runtime', () => {
 			expect(set(proxy, 24, 52)).toBe(52)
 			expect(args).toEqual([obj, '24', 52, expect.any(Object)])
 		})
+
+		it('should work with nested Proxies', () => {
+			const proxy = new Proxy(
+				new Proxy(
+					{},
+					{
+						get() {
+							return 42
+						},
+					}
+				),
+				{}
+			)
+			expect(get(proxy, 'foo')).toBe(42)
+		})
 	})
 
 	describe('Revocable proxy', () => {
