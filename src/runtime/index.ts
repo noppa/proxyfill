@@ -9,6 +9,7 @@
  * fit into the code style and goals of this project.
  */
 
+import {updateExpression} from '@babel/types'
 import {assertNotPrivateApiProp} from './assertNotPrivateApiProp'
 import type {ProxyPrivateApiContainer, ProxyfillPrivateApi} from './constants'
 
@@ -546,6 +547,18 @@ export function set(
 	}
 }
 
+export function updateProperty(
+	object: PossiblyProxy,
+	property: unknown,
+	prefix: 1 | 0,
+	incrementBy: 1 | -1
+): number {
+	const current = +(get(object, property) as any)
+	const next = current + incrementBy
+	set(object, property, next)
+	return prefix ? next : current
+}
+
 export function has(property: unknown, obj: PossiblyProxy): boolean {
 	const api = getProxyfillApi(obj)
 	const propName = normalizeProperty(property)
@@ -592,6 +605,7 @@ export type RuntimeFunctions = {
 	set: typeof set
 	has: typeof has
 	deleteProperty: typeof deleteProperty
+	updateProperty: typeof updateProperty
 }
 
 interface IProxy {

@@ -7,7 +7,8 @@ var Proxy = _proxyfillRuntime.Proxy,
 	_proxyfillRuntime$set = _proxyfillRuntime.set,
 	_proxyfillRuntime$invoke = _proxyfillRuntime.invoke,
 	_proxyfillRuntime$has = _proxyfillRuntime.has,
-	_proxyfillRuntime$deleteProperty = _proxyfillRuntime.deleteProperty
+	_proxyfillRuntime$deleteProperty = _proxyfillRuntime.deleteProperty,
+	_proxyfillRuntime$updateProperty = _proxyfillRuntime.updateProperty
 bar()
 "
 `;
@@ -19,7 +20,8 @@ var Proxy = _proxyfillRuntime.Proxy,
 	_proxyfillRuntime$set = _proxyfillRuntime.set,
 	_proxyfillRuntime$invoke = _proxyfillRuntime.invoke,
 	_proxyfillRuntime$has = _proxyfillRuntime.has,
-	_proxyfillRuntime$deleteProperty = _proxyfillRuntime.deleteProperty
+	_proxyfillRuntime$deleteProperty = _proxyfillRuntime.deleteProperty,
+	_proxyfillRuntime$updateProperty = _proxyfillRuntime.updateProperty
 
 _proxyfillRuntime$get(foo, 0)
 
@@ -36,7 +38,8 @@ var Proxy = _proxyfillRuntime.Proxy,
 	_proxyfillRuntime$set = _proxyfillRuntime.set,
 	_proxyfillRuntime$invoke = _proxyfillRuntime.invoke,
 	_proxyfillRuntime$has = _proxyfillRuntime.has,
-	_proxyfillRuntime$deleteProperty = _proxyfillRuntime.deleteProperty
+	_proxyfillRuntime$deleteProperty = _proxyfillRuntime.deleteProperty,
+	_proxyfillRuntime$updateProperty = _proxyfillRuntime.updateProperty
 
 _proxyfillRuntime$set(foo, 0, 42)
 
@@ -53,7 +56,8 @@ var Proxy = _proxyfillRuntime.Proxy,
 	_proxyfillRuntime$set = _proxyfillRuntime.set,
 	_proxyfillRuntime$invoke = _proxyfillRuntime.invoke,
 	_proxyfillRuntime$has = _proxyfillRuntime.has,
-	_proxyfillRuntime$deleteProperty = _proxyfillRuntime.deleteProperty
+	_proxyfillRuntime$deleteProperty = _proxyfillRuntime.deleteProperty,
+	_proxyfillRuntime$updateProperty = _proxyfillRuntime.updateProperty
 
 _proxyfillRuntime$deleteProperty(foo, 'bar')
 "
@@ -66,7 +70,8 @@ var Proxy = _proxyfillRuntime.Proxy,
 	_proxyfillRuntime$set = _proxyfillRuntime.set,
 	_proxyfillRuntime$invoke = _proxyfillRuntime.invoke,
 	_proxyfillRuntime$has = _proxyfillRuntime.has,
-	_proxyfillRuntime$deleteProperty = _proxyfillRuntime.deleteProperty
+	_proxyfillRuntime$deleteProperty = _proxyfillRuntime.deleteProperty,
+	_proxyfillRuntime$updateProperty = _proxyfillRuntime.updateProperty
 
 _proxyfillRuntime$get(foo, 'bar')
 "
@@ -79,7 +84,8 @@ var Proxy = _proxyfillRuntime.Proxy,
 	_proxyfillRuntime$set = _proxyfillRuntime.set,
 	_proxyfillRuntime$invoke = _proxyfillRuntime.invoke,
 	_proxyfillRuntime$has = _proxyfillRuntime.has,
-	_proxyfillRuntime$deleteProperty = _proxyfillRuntime.deleteProperty
+	_proxyfillRuntime$deleteProperty = _proxyfillRuntime.deleteProperty,
+	_proxyfillRuntime$updateProperty = _proxyfillRuntime.updateProperty
 
 _proxyfillRuntime$has(foo, bar)
 
@@ -94,7 +100,8 @@ var Proxy = _proxyfillRuntime.Proxy,
 	_proxyfillRuntime$set = _proxyfillRuntime.set,
 	_proxyfillRuntime$invoke = _proxyfillRuntime.invoke,
 	_proxyfillRuntime$has = _proxyfillRuntime.has,
-	_proxyfillRuntime$deleteProperty = _proxyfillRuntime.deleteProperty
+	_proxyfillRuntime$deleteProperty = _proxyfillRuntime.deleteProperty,
+	_proxyfillRuntime$updateProperty = _proxyfillRuntime.updateProperty
 
 _proxyfillRuntime$invoke(foo, 'bar', [])
 "
@@ -107,7 +114,8 @@ var Proxy = _proxyfillRuntime.Proxy,
 	_proxyfillRuntime$set = _proxyfillRuntime.set,
 	_proxyfillRuntime$invoke = _proxyfillRuntime.invoke,
 	_proxyfillRuntime$has = _proxyfillRuntime.has,
-	_proxyfillRuntime$deleteProperty = _proxyfillRuntime.deleteProperty
+	_proxyfillRuntime$deleteProperty = _proxyfillRuntime.deleteProperty,
+	_proxyfillRuntime$updateProperty = _proxyfillRuntime.updateProperty
 
 _proxyfillRuntime$set(foo, 'bar', 42)
 "

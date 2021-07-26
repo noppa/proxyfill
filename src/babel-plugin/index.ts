@@ -18,6 +18,7 @@ const runtimeFunctionsMap: {[k in keyof RuntimeFunctions]: 0} = {
 	invoke: 0,
 	has: 0,
 	deleteProperty: 0,
+	updateProperty: 0,
 }
 
 const runtimeApiFunctionNames = Object.keys(runtimeFunctionsMap)
