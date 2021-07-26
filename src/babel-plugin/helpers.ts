@@ -40,15 +40,21 @@ export function getPropertyOfMember(
 	}
 }
 
+const moduleMagicObjects = new Set(['module', 'require', 'import', 'process'])
+
 function shouldIgnoreProperty(
 	obj: t.Expression,
 	propName: string | t.Expression,
 	ignoredProperties: undefined | null | IgnoredPropertiesConfig[]
-) {
+): boolean {
 	// TODO: Even if obj is a dynamic expression, we should ignore property
 	// with config { objectIdentifierName: '*', propertyIdentifierName: 'foo' }
 	if (!t.isIdentifier(obj)) {
-		return false
+		return (
+			t.isMemberExpression(obj) &&
+			t.isIdentifier(obj.property) &&
+			shouldIgnoreProperty(obj.object, obj.property.name, ignoredProperties)
+		)
 	}
 	const objName = obj.name
 
@@ -57,6 +63,11 @@ function shouldIgnoreProperty(
 		// var proxyfillRuntime$get = _proxyfillRuntime['get'];
 		// should not be converted to
 		// var proxyfillRuntime$get = proxyfillRuntime$get(__proxyfillRuntime, 'get')
+		return true
+	}
+
+	if (moduleMagicObjects.has(objName)) {
+		// Don't transform module.exports, import.meta etc.
 		return true
 	}
 

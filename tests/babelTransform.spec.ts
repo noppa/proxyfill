@@ -45,4 +45,12 @@ describe('proxyfill Babel plugin', () => {
 	it('should transform update member expressions', () => {
 		expect(traverse('foo.bar++')).toMatchSnapshot()
 	})
+	it('should not transform module.exports', () => {
+		expect(
+			traverse(`
+			module.exports = {}
+			module.exports.foo = 42
+		`)
+		).toMatchSnapshot()
+	})
 })
