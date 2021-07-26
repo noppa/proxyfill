@@ -43,6 +43,16 @@ const {
 	deleteProperty: Reflect$deleteProperty,
 } = Reflect
 const NativeProxy = typeof Proxy === 'function' ? Proxy : null
+let PolyfilledSymbolConstr: null | Function = null
+if (typeof Symbol === 'function') {
+	try {
+		const s = Symbol()
+		if (typeof s === 'object' && (s as any) instanceof Symbol) {
+			PolyfilledSymbolConstr = Symbol
+		}
+		// eslint-disable-next-line no-empty
+	} catch (err) {}
+}
 
 /**
  * toString implementation that does not call any traps if `target` is a Proxy
@@ -176,8 +186,15 @@ function isString(key: string | symbol): key is string {
 }
 
 function isSymbol(key: string | symbol): key is symbol {
-	// TODO: Handle polyfilled symbols, look into what e.g. core-js symbols look like
-	return typeof key === 'symbol'
+	const type = typeof key
+	return (
+		type === 'symbol' ||
+		// core-js polyfilled Symbols are objects that are instances of the global Symbol function
+		(!!PolyfilledSymbolConstr &&
+			type === 'object' &&
+			key !== null &&
+			(key as any) instanceof PolyfilledSymbolConstr)
+	)
 }
 
 const objectKeysPolyfill = function keys(object: PossiblyProxy): string[] {
