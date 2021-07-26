@@ -9,7 +9,6 @@
  * fit into the code style and goals of this project.
  */
 
-import {updateExpression} from '@babel/types'
 import {assertNotPrivateApiProp} from './assertNotPrivateApiProp'
 import type {ProxyPrivateApiContainer, ProxyfillPrivateApi} from './constants'
 

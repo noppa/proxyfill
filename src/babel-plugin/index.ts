@@ -3,6 +3,7 @@ import AssignmentExpression from './assignmentExpression'
 import CallExpression from './callExpression'
 import BinaryExpression from './binaryExpression'
 import UnaryExpression from './unaryExpression'
+import UpdateExpression from './updateExpression'
 
 import type * as Babel from '@babel/core'
 import template from '@babel/template'
@@ -78,6 +79,7 @@ export default function babelPluginProxyfill(): Babel.PluginObj<VisitorState> {
 			AssignmentExpression,
 			BinaryExpression,
 			UnaryExpression,
+			UpdateExpression,
 		},
 	}
 }

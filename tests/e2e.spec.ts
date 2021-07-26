@@ -118,6 +118,24 @@ describe('runtime behavior of generated code', () => {
 				return [result, 'foo' in obj, calls]
 			})
 		)
+		it(
+			'should handle update expressions',
+			mkTest([2, 'number', 2, 2, 1], () => {
+				let calledWith
+				const obj: any = {}
+				const proxy = new Proxy(obj, {
+					get(target: any, key) {
+						return target[key] ?? '1'
+					},
+					set(target, key, value) {
+						calledWith = typeof value
+						target[key] = value
+						return true
+					},
+				})
+				return [++proxy.foo, calledWith, obj.foo, proxy.foo--, obj.foo]
+			})
+		)
 	})
 	describe('polyfilled built-in functions', () => {
 		it(
