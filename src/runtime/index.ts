@@ -35,8 +35,13 @@ const {
 	getOwnPropertySymbols: Object$getOwnPropertySymbols,
 	getOwnPropertyDescriptor: Object$getOwnPropertyDescriptor,
 } = Object
-const {ownKeys: Reflect$ownKeys, defineProperty: Reflect$defineProperty} =
-	Reflect
+const {
+	ownKeys: Reflect$ownKeys,
+	defineProperty: Reflect$defineProperty,
+	get: Reflect$get,
+	set: Reflect$set,
+	deleteProperty: Reflect$deleteProperty,
+} = Reflect
 
 /**
  * toString implementation that does not call any traps if `target` is a Proxy
@@ -289,6 +294,18 @@ const standardLibraryPolyfills: readonly PolyfillDef[] = [
 	{
 		orig: Object$assign,
 		mod: assignPolyfill,
+	},
+	{
+		orig: Reflect$get,
+		mod: get,
+	},
+	{
+		orig: Reflect$set,
+		mod: set,
+	},
+	{
+		orig: Reflect$deleteProperty,
+		mod: deleteProperty,
 	},
 ]
 
