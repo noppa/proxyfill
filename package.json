@@ -41,7 +41,8 @@
 		"test262": "npx test262-harness --preprocessor test262/preprocessor.js --test262Dir test262/test262 --features Proxy test262/test262/test/built-ins/Proxy/apply/null-handler.js",
 		"typescript": "tsc --noEmit",
 		"build:runtime": "rollup -c src/runtime/rollup.config.js",
-		"build": "npm run build:runtime"
+		"build:babel-plugin": "rollup -c src/babel-plugin/rollup.config.js",
+		"build": "npm run build:runtime && npm run build:babel-plugin"
 	},
 	"repository": {
 		"type": "git",

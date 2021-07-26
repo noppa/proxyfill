@@ -4,3 +4,4 @@ dist
 runtime.js
 runtime.mjs
 runtime-global.js
+babel-plugin-proxyfill.mjs

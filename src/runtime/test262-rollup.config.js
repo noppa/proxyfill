@@ -1,1 +1,1 @@
-export {iife as default} from './rollup.config.js'
+export {runtimeIife as default} from './rollup.config.js'
