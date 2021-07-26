@@ -102,6 +102,22 @@ describe('runtime behavior of generated code', () => {
 				return ['foo' in proxy, 'baz' in proxy, calls, _target === obj]
 			})
 		)
+		it(
+			'should call "deleteProperty" trap for delete-operator',
+			mkTest([true, false, 1], () => {
+				let calls = 0
+				const obj = {foo: 1 as undefined | number}
+				const proxy: any = new Proxy(obj, {
+					deleteProperty(target: any, key) {
+						calls++
+						delete target[key]
+						return true
+					},
+				})
+				const result = delete proxy.foo
+				return [result, 'foo' in obj, calls]
+			})
+		)
 	})
 	describe('polyfilled built-in functions', () => {
 		it(

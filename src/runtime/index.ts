@@ -510,10 +510,10 @@ export function set(
 }
 
 export function has(property: unknown, obj: PossiblyProxy): boolean {
-	const propName = normalizeProperty(property)
 	const api = getProxyfillApi(obj)
 
 	if (api) {
+		const propName = normalizeProperty(property)
 		assertNotRevoked(api, 'has')
 		const handlers = api.handler
 		const hasHandler = handlers.has
@@ -526,9 +526,25 @@ export function has(property: unknown, obj: PossiblyProxy): boolean {
 	return (property as any) in (obj as any)
 }
 
-export function deleteProperty(object: PossiblyProxy, key: unknown): boolean {
-	// TODO
-	return true
+export function deleteProperty(
+	object: PossiblyProxy,
+	key: string | symbol
+): boolean {
+	const api = getProxyfillApi(object)
+
+	if (api) {
+		const propName = normalizeProperty(key)
+		assertNotRevoked(api, 'deleteProperty')
+		const handlers = api.handler
+		const deleteHandler = handlers.deleteProperty
+		// TODO: Assert that the object is extensible and property is configurable
+		if (deleteHandler) {
+			return !!deleteHandler.call(handlers, api.target, propName)
+		}
+		object = api.target
+	}
+
+	return delete (object as any)[key]
 }
 
 export type RuntimeFunctions = {
