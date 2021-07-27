@@ -26,23 +26,20 @@ function isObject(
 const {bind, apply} = isObject
 const {slice} = []
 const Object$hasOwnProperty = {}.hasOwnProperty
-const {
-	assign: Object$assign,
-	defineProperty: Object$defineProperty,
-	defineProperties: Object$defineProperties,
-	keys: Object$keys,
-	getOwnPropertyNames: Object$getOwnPropertyNames,
-	getOwnPropertySymbols: Object$getOwnPropertySymbols,
-	getOwnPropertyDescriptor: Object$getOwnPropertyDescriptor,
-} = Object
-const {
-	ownKeys: Reflect$ownKeys,
-	defineProperty: Reflect$defineProperty,
-	get: Reflect$get,
-	set: Reflect$set,
-	deleteProperty: Reflect$deleteProperty,
-} = Reflect
+
+const getReflect = (): typeof Reflect | null =>
+	typeof Reflect !== 'undefined' ? Reflect : null
+
+const getObject = () => Object
 const NativeProxy = typeof Proxy === 'function' ? Proxy : null
+
+const noop: (...args: any[]) => any = () => {}
+
+const getNativeApi = <T, K extends keyof T>(
+	api: () => null | T,
+	funcName: K
+): T[K] => api()?.[funcName] ?? (noop as any)
+
 let PolyfilledSymbolConstr: null | Function = null
 if (typeof Symbol === 'function') {
 	try {
@@ -87,7 +84,17 @@ const reflectDefinePropertyPolyfill = function defineProperty(
 		}
 		object = api.target
 	}
-	return Reflect$defineProperty(object as object, key, desc)
+
+	const Reflect$defineProperty = getNativeApi(getReflect, 'defineProperty')
+	if (Reflect$defineProperty === noop) {
+		try {
+			getNativeApi(getObject, 'defineProperty')(object as object, key, desc)
+			return true
+		} catch (err) {
+			return false
+		}
+	}
+	return getNativeApi(getReflect, 'defineProperty')(object as object, key, desc)
 }
 
 const objectDefinePropertyPolyfill = function defineProperty(
@@ -120,7 +127,7 @@ const objectDefinePropertiesPolyfill = function defineProperties(
 		}
 		return object
 	}
-	return Object$defineProperties(object, descs)
+	return getNativeApi(getObject, 'defineProperties')(object, descs)
 }
 
 const getOwnPropertyDescriptorPolyfill = function getOwnPropertyDescriptor(
@@ -141,7 +148,7 @@ const getOwnPropertyDescriptorPolyfill = function getOwnPropertyDescriptor(
 		}
 		object = api.target
 	}
-	return Object$getOwnPropertyDescriptor(object, key)
+	return getNativeApi(getObject, 'getOwnPropertyDescriptor')(object, key)
 }
 
 function getOwnKeysFromProxy(
@@ -169,7 +176,7 @@ function getOwnKeysFromProxy(
 		}
 		return validKeys
 	}
-	return Reflect$ownKeys(api.target)
+	return getNativeApi(getReflect, 'ownKeys')(api.target)
 }
 
 function isOwnEnumerableStringKey(
@@ -206,7 +213,7 @@ const objectKeysPolyfill = function keys(object: PossiblyProxy): string[] {
 			object
 		) as string[]
 	}
-	return Object$keys(object as {})
+	return getNativeApi(getObject, 'keys')(object as {})
 }
 
 const getOwnPropertyNamesPolyfill = function getOwnPropertyNames(
@@ -216,7 +223,7 @@ const getOwnPropertyNamesPolyfill = function getOwnPropertyNames(
 	if (api) {
 		return getOwnKeysFromProxy(api, isString, object)
 	}
-	return Object$getOwnPropertyNames(object)
+	return getNativeApi(getObject, 'getOwnPropertyNames')(object)
 }
 
 const getOwnPropertySymbolsPolyfill = function getOwnPropertyNames(
@@ -226,7 +233,7 @@ const getOwnPropertySymbolsPolyfill = function getOwnPropertyNames(
 	if (api) {
 		return getOwnKeysFromProxy(api, isSymbol, object)
 	}
-	return Object$getOwnPropertyNames(object)
+	return getNativeApi(getObject, 'getOwnPropertyNames')(object)
 }
 
 function hasOwnPropertyStatic(object: PossiblyProxy, key: string): boolean {
@@ -252,7 +259,7 @@ const assignPolyfill: typeof Object['assign'] = function assign(
 	// Optimization for the common case: two arguments, neither of which
 	// is Proxy, just delegate to built-in Object.assign
 	if (arguments.length === 2 && !isProxy(target) && !isProxy(source)) {
-		return Object$assign(target, source)
+		return getNativeApi(getObject, 'assign')(target, source)
 	}
 
 	const to = Object(target)
@@ -271,63 +278,58 @@ const assignPolyfill: typeof Object['assign'] = function assign(
 	return to
 }
 
-type PolyfillDef = {
-	orig: Function
-	mod: Function
+function getPolyfillForNativeMethod(
+	object: unknown,
+	methodName: string | symbol
+): undefined | Function {
+	if (!object) {
+		return
+	}
+
+	if (object === getObject()) {
+		switch (methodName) {
+			case 'defineProperty':
+				return objectDefinePropertyPolyfill
+			case 'defineProperties':
+				return objectDefinePropertiesPolyfill
+			case 'getOwnPropertyDescriptor':
+				return getOwnPropertyDescriptorPolyfill
+			case 'getOwnPropertyNames':
+				return getOwnPropertyNamesPolyfill
+			case 'getOwnPropertySymbols':
+				return getOwnPropertySymbolsPolyfill
+			case 'keys':
+				return objectKeysPolyfill
+			case 'assign':
+				return assignPolyfill
+		}
+	} else if (object === getReflect()) {
+		switch (methodName) {
+			case 'defineProperty':
+				return reflectDefinePropertyPolyfill
+			case 'get':
+				return get
+			case 'set':
+				return set
+			case 'deleteProperty':
+				return deleteProperty
+		}
+	}
 }
 
-Proxy
-
-const standardLibraryPolyfills: PolyfillDef[] = [
-	{
-		orig: Object$defineProperty,
-		mod: objectDefinePropertyPolyfill,
-	},
-	{
-		orig: Reflect$defineProperty,
-		mod: reflectDefinePropertyPolyfill,
-	},
-	{
-		orig: Object$defineProperties,
-		mod: objectDefinePropertiesPolyfill,
-	},
-	{
-		orig: Object$getOwnPropertyDescriptor,
-		mod: getOwnPropertyDescriptorPolyfill,
-	},
-	{
-		orig: Object$getOwnPropertyNames,
-		mod: getOwnPropertyNamesPolyfill,
-	},
-	{
-		orig: Object$getOwnPropertySymbols,
-		mod: getOwnPropertySymbolsPolyfill,
-	},
-	{
-		orig: Object$keys,
-		mod: objectKeysPolyfill,
-	},
-	{
-		orig: Object$hasOwnProperty,
-		mod: hasOwnPropertyPolyfill,
-	},
-	{
-		orig: Object$assign,
-		mod: assignPolyfill,
-	},
-	{
-		orig: Reflect$get,
-		mod: get,
-	},
-	{
-		orig: Reflect$set,
-		mod: set,
-	},
-	{
-		orig: Reflect$deleteProperty,
-		mod: deleteProperty,
-	},
-]
+function getPolyfillForFunction(
+	originalFunction: unknown
+): undefined | Function {
+	if (!originalFunction) {
+		return
+	}
+	if (originalFunction === Object$hasOwnProperty) {
+		return hasOwnPropertyPolyfill
+	}
+	if (originalFunction === NativeProxy) {
+		return ProxyPolyfill
+	}
+}
 
 function createProxy(
 	// eslint-disable-next-line @typescript-eslint/ban-types
@@ -376,10 +378,10 @@ function createProxy(
 				return target.apply(this, args)
 			}
 		}
-		Object$assign(proxy, proxyPrivateApi)
+		getNativeApi(getObject, 'assign')(proxy, proxyPrivateApi)
 	} else if (target instanceof Array) {
 		proxy = []
-		Object$assign(proxy, proxyPrivateApi)
+		getNativeApi(getObject, 'assign')(proxy, proxyPrivateApi)
 	} else {
 		proxy = proxyPrivateApi
 	}
@@ -414,7 +416,7 @@ function createProxy(
 
 	for (let i = 0; i < runtimeTraps.length; i++) {
 		const trap = runtimeTraps[i]
-		Object$defineProperty(proxy, trap, {
+		getNativeApi(getObject, 'defineProperty')(proxy, trap, {
 			get: () => get(proxy, trap),
 		})
 	}
@@ -464,6 +466,12 @@ export function get(obj: PossiblyProxy, property: unknown): unknown {
 	// this function again.
 
 	const propName = normalizeProperty(property)
+
+	// Some standard lib functions, like {}.hasOwnPrototype, defineProperty, etc
+	// need special handling to make some Proxy traps work correctly.
+	let trappedNativeFn = getPolyfillForNativeMethod(obj, propName)
+	if (trappedNativeFn) return trappedNativeFn
+
 	const api = getProxyfillApi(obj)
 
 	let val: any
@@ -481,14 +489,8 @@ export function get(obj: PossiblyProxy, property: unknown): unknown {
 		val = (obj as any)[propName]
 	}
 
-	for (let i = 0, n = standardLibraryPolyfills.length; i < n; i++) {
-		const p = standardLibraryPolyfills[i]
-		if (val === p.orig) {
-			// Don't let userland code bind original versions of polyfilled standard library
-			// functions to variables, return the polyfill instead.
-			return p.mod
-		}
-	}
+	trappedNativeFn = getPolyfillForFunction(val)
+	if (trappedNativeFn) return trappedNativeFn
 
 	return val
 }
@@ -501,15 +503,6 @@ export function invoke(
 	const fn: any = get(obj, property)
 	if (typeof fn !== 'function') {
 		throw new TypeError(`${String(property)} is not a function`)
-	}
-
-	for (let i = 0, n = standardLibraryPolyfills.length; i < n; i++) {
-		const p = standardLibraryPolyfills[i]
-		if (fn === p.orig) {
-			// Some standard lib functions, like {}.hasOwnPrototype
-			// need special handling to make some Proxy traps work
-			return p.mod.apply(obj, args)
-		}
 	}
 
 	return apply.call(fn, obj, args)
@@ -634,13 +627,6 @@ ProxyPolyfill.revocable = function (
 		proxy.__proxyfill.revoked = true
 	}
 	return {proxy, revoke}
-}
-
-if (NativeProxy) {
-	standardLibraryPolyfills.push({
-		orig: NativeProxy,
-		mod: ProxyPolyfill,
-	})
 }
 
 export {ProxyPolyfill as Proxy}
