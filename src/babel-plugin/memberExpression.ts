@@ -8,6 +8,14 @@ export default function MemberExpression(
 	path: NodePath<t.MemberExpression>,
 	{opts}: VisitorState
 ) {
+	const {parent} = path
+
+	// If we are inside method call foo.bar(), let the CallExpression handler take care of it.
+	const isCallee = t.isCallExpression(parent) && path.node === parent.callee
+	if (isCallee) {
+		return
+	}
+
 	const memberInfo = getPropertyOfMember(path, opts.ignoredProperties)
 	if (!memberInfo) return
 	const {object, property} = memberInfo
