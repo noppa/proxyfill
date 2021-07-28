@@ -4,6 +4,8 @@ export type ProxyfillPrivateApi = {
 	target: object
 	handler: ProxyHandler<object>
 	revoked: boolean
+	isFn: boolean
+	isArr: boolean
 }
 export type ProxyPrivateApiContainer = {
 	__proxyfill: ProxyfillPrivateApi

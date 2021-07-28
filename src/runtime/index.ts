@@ -1,3 +1,5 @@
+'use strict'
+import {concat, includes} from '../utils/arrayHelpers'
 /*
  * The Proxy implementation was originally derived from
  * the implementation of Google's proxy-polyfill
@@ -62,15 +64,20 @@ if (typeof Symbol === 'function') {
 /**
  * toString implementation that does not call any traps if `target` is a Proxy
  */
-function toString(target: unknown): string {
-	if (isObject(target)) {
-		const api = getProxyfillApi(target as PossiblyProxy)
-		if (api) {
-			const typeStr = typeof target === 'function' ? 'Function' : 'Object'
-			return `[object ${typeStr}]`
+function safeToString(target: unknown): string {
+	try {
+		if (isObject(target)) {
+			const api = getProxyfillApi(target as PossiblyProxy)
+			if (api) {
+				const typeStr = typeof target === 'function' ? 'Function' : 'Object'
+				return `[object ${typeStr}]`
+			}
 		}
+		return String(target)
+	} catch (err) {
+		logWarning(err)
+		return '<unknown value>'
 	}
-	return String(target)
 }
 
 // Custom implementations for some of the JS standard library functions
@@ -113,7 +120,7 @@ const objectDefinePropertyPolyfill = function defineProperty(
 	const success = reflectDefinePropertyPolyfill(object, key, descr)
 	if (!success) {
 		throw new TypeError(
-			`'defineProperty' on proxy: trap returned falsish for property '${toString(
+			`'defineProperty' on proxy: trap returned falsish for property '${safeToString(
 				key
 			)}'`
 		)
@@ -179,7 +186,7 @@ function getOwnKeysFromProxy(
 					validKeys.push(key)
 				}
 			} else {
-				throw new TypeError(`${toString(key)} is not a valid property name`)
+				throw new TypeError(`${safeToString(key)} is not a valid property name`)
 			}
 		}
 		return validKeys
@@ -351,16 +358,17 @@ function createProxy(
 		)
 	}
 
-	const proxyPrivateApi: ProxyPrivateApiContainer = {
-		__proxyfill: {
-			target,
-			handler,
-			revoked: false,
-		},
+	const privateApi: ProxyfillPrivateApi = {
+		target,
+		handler,
+		revoked: false,
+		isFn: false,
+		isArr: false,
 	}
 
-	let proxy: any
+	let proxy: ProxyPrivateApiContainer
 	if (typeof target === 'function') {
+		privateApi.isFn = true
 		proxy = function ProxyPolyfill(this: any) {
 			const usingNew = !!this && this.constructor === proxy
 			const args: any[] = slice.call(arguments)
@@ -369,7 +377,7 @@ function createProxy(
 			if (usingNew) {
 				assertNotRevoked(proxy.__proxyfill, 'construct')
 				if (handler.construct) {
-					return handler.construct.call(this, target, args, proxy)
+					return handler.construct.call(this, target, args, proxy as any)
 				}
 				// inspired by answers to https://stackoverflow.com/q/1606797
 				args.unshift(target)
@@ -385,13 +393,59 @@ function createProxy(
 				}
 				return target.apply(this, args)
 			}
-		}
-		getNativeApi(getObject, 'assign')(proxy, proxyPrivateApi)
+		} as any
 	} else if (target instanceof Array) {
-		proxy = []
-		getNativeApi(getObject, 'assign')(proxy, proxyPrivateApi)
+		privateApi.isArr = true
+		proxy = [] as any
 	} else {
-		proxy = proxyPrivateApi
+		proxy = {} as any
+	}
+
+	const Object$getOwnPropertyNames = getNativeApi(
+		getObject,
+		'getOwnPropertyNames'
+	)
+	const propertyNames = Object$getOwnPropertyNames(target) || []
+	const propertySymbols =
+		getNativeApi(getObject, 'getOwnPropertySymbols')(target) || []
+	const allOwnProperties = concat(propertyNames, propertySymbols)
+
+	const Object$getOwnPropertyDescriptor = getNativeApi(
+		getObject,
+		'getOwnPropertyDescriptor'
+	)
+
+	// Set getter-setter traps to all of the properties of the target object.  This is done
+	// only as a fallback in case something is wrong with the build process! All property
+	// access in the application should've been converted to __proxyfillRuntime$get calls
+	// and we should not need this at all, but sometimes some dependency or something
+	// might've been missed from the build and that can cause some "regular" foo.bar access
+	// to pass through. At that point we can't do perfect job polyfilling it (can't catch
+	// new properties being added), but we'll try our best.
+
+	if (privateApi.isArr) {
+		// For arrays, we don't copy all the items because that could be very memory-heavy
+		// for large arrays. Just copy a few and try to detect iteration. This is very
+		// hacky and brittle, but it's the best we can do here. Again, this should not even
+		// be needed, as all the [].map calls etc should've already been transformed to
+		// __proxyfillRuntime$invoke([], 'map'). This is only a fallback.
+		const arrayProto: any = Array.prototype
+		const arrayProtoProps = Object$getOwnPropertyNames(arrayProto)
+		for (let i = 0, n = arrayProtoProps.length; i < n; i++) {
+			const prop = arrayProtoProps[i]
+			if (prop === 'length' || prop === 'constructor') {
+				continue
+			}
+			if (typeof arrayProto[prop] === 'function') {
+				setArrayMethodTrap(proxy as ProxyPrivateApiContainer & Array<any>, prop)
+			}
+		}
+	} else if (!privateApi.isFn) {
+		for (let i = 0, n = allOwnProperties.length; i < n; i++) {
+			const prop = allOwnProperties[i]
+			const descr = Object$getOwnPropertyDescriptor(target, prop)
+			setPropertyTrap(proxy, prop, descr, /* warn: */ true)
+		}
 	}
 
 	// Install top-level getter traps for symbols & methods
@@ -420,17 +474,137 @@ function createProxy(
 	} else {
 		runtimeTraps = []
 	}
-	runtimeTraps.push('valueOf', 'toString', 'toJSON')
+	runtimeTraps = concat(runtimeTraps, ['valueOf', 'toString', 'toJSON'])
 
-	for (let i = 0; i < runtimeTraps.length; i++) {
+	for (let i = 0, n = runtimeTraps.length; i < n; i++) {
 		const trap = runtimeTraps[i]
-		getNativeApi(getObject, 'defineProperty')(proxy, trap, {
-			get: () => get(proxy, trap),
-		})
+		if (includes(allOwnProperties, trap)) continue
+		setPropertyTrap(proxy, trap, undefined, false)
 	}
+
+	const privateApiKey: keyof ProxyPrivateApiContainer = '__proxyfill'
+
+	// Set the actual __proxyfill private api, which will be used by __proxyfillRuntime API
+	getNativeApi(getObject, 'defineProperty')(proxy, privateApiKey, {
+		writable: false,
+		configurable: false,
+		enumerable: false,
+		value: privateApi,
+	})
 
 	return proxy
 }
+
+function logWarning(msg: string | Error) {
+	if (typeof console !== 'undefined' && typeof console.warn === 'function') {
+		console.warn(msg)
+	}
+}
+
+function setPropertyTrap(
+	proxy: PossiblyProxy,
+	prop: string | symbol,
+	descr: PropertyDescriptor | undefined,
+	warn: boolean
+) {
+	const Object$defineProperty = getNativeApi(getObject, 'defineProperty')
+	const attributes = {
+		get: function mirroredGet() {
+			return fallbackGet(proxy, prop, warn)
+		},
+		set: function mirroredSet(val: unknown) {
+			return fallbackSet(proxy, prop, val, warn)
+		},
+		enumerable: !!(descr && descr.enumerable),
+	}
+	try {
+		Object$defineProperty(proxy, prop, attributes)
+	} catch (err) {
+		logWarning('Cannot callDefineProperty for property ' + safeToString(prop))
+	}
+}
+
+const MAX_ARRAY_ENTRY_TRAPS = 3
+
+function updateMirroredArrayEntries(
+	proxy: ProxyPrivateApiContainer & Array<any>
+) {
+	const api = getProxyfillApi(proxy)
+	if (!api || !api.isArr) {
+		// Sanity check, this shouldn't happen though
+		return
+	}
+	const targetArr: any[] = api.target as any
+	// Clear existing traps
+	const targetLength = targetArr.length
+	if (targetLength === proxy.length) {
+		return
+	}
+	if (targetLength > proxy.length) {
+		proxy.length = targetLength
+	}
+	const trapsToSet =
+		targetLength > MAX_ARRAY_ENTRY_TRAPS ? MAX_ARRAY_ENTRY_TRAPS : targetLength
+	for (let i = 0; i < trapsToSet; i++) {
+		defineMirroredArrayEntry(proxy, targetArr, i)
+	}
+}
+
+function defineMirroredArrayEntry(
+	proxy: ProxyPrivateApiContainer & Array<any>,
+	targetArr: any[],
+	index: number
+) {
+	if (index < 0 || index >= targetArr.length) {
+		return
+	}
+
+	const currentDescr = getNativeApi(getObject, 'getOwnPropertyDescriptor')(
+		proxy,
+		index
+	)
+	if (currentDescr) {
+		// There already is trap for this index, skip
+		return
+	}
+	const Object$defineProperty = getNativeApi(getObject, 'defineProperty')
+
+	Object$defineProperty(proxy, '' + index, {
+		configurable: true,
+		enumerable: true,
+		get: function mirroredArrayEntryGet() {
+			const result = fallbackGet(proxy, index, /* warn: */ true)
+			// We might be iterating the array, define next and previous entry if they are not there already so
+			// that we trap that too
+			defineMirroredArrayEntry(proxy, targetArr, index + 1)
+			// Define index-1 too in case we are iterating backwards
+			defineMirroredArrayEntry(proxy, targetArr, index - 1)
+			return result
+		},
+		set(value: any) {
+			return fallbackSet(proxy, index, value, true)
+		},
+	})
+}
+
+function setArrayMethodTrap(
+	proxy: ProxyPrivateApiContainer & Array<any>,
+	prop: string | symbol
+) {
+	const Object$defineProperty = getNativeApi(getObject, 'defineProperty')
+
+	Object$defineProperty(proxy, prop, {
+		writable: true,
+		enumerable: false,
+		configurable: true,
+		value: function mirroredArrayMethod(...args: any[]) {
+			const result = invoke(proxy, prop, args)
+			updateMirroredArrayEntries(proxy)
+			return result
+		},
+	})
+}
+
 type PossiblyProxy = null | undefined | Partial<ProxyPrivateApiContainer>
 
 function getProxyfillApi(obj: PossiblyProxy): null | ProxyfillPrivateApi {
@@ -460,19 +634,7 @@ function normalizeProperty(propertyName: any): string | symbol {
 	return '' + propertyName
 }
 
-/**
- *
- * @param obj Target object to get a value from, possibly a "Proxy" created with createProxy.
- * @param propName Name of the property to get
- * @param notProxy Result of calling isNotProxy(obj) that can be used as an optimization
- * 		to skip the proxy check in places where properties of a constant object are accessed
- * 		multiple times.
- */
 export function get(obj: PossiblyProxy, property: unknown): unknown {
-	// NOTE: Stringifying obj here, by using console.log, for example, can cause
-	// inifinite loop because the proxy has Symbol.toPrimitive trap set to call
-	// this function again.
-
 	const propName = normalizeProperty(property)
 
 	// Some standard lib functions, like {}.hasOwnPrototype, defineProperty, etc
@@ -501,6 +663,31 @@ export function get(obj: PossiblyProxy, property: unknown): unknown {
 	if (trappedNativeFn) return trappedNativeFn
 
 	return val
+}
+
+function fallbackGet(
+	obj: PossiblyProxy,
+	property: unknown,
+	warn: boolean
+): unknown {
+	// This function is called if, for some reason, some part of the end result application
+	// ends up doing `proxy.foo = bar` directly, at which point something has already failed
+	// because all of those statements should've been transformed to _proxyfillRuntime$get calls.
+
+	if (
+		warn &&
+		typeof console !== 'undefined' &&
+		typeof console.warn === 'function'
+	) {
+		console.warn(
+			new Error(
+				`Getter ${safeToString(
+					property
+				)} called directly without going through _proxyfillRuntime$get`
+			)
+		)
+	}
+	return get(obj, property)
 }
 
 export function invoke(
@@ -533,7 +720,7 @@ export function set(
 			if (!result) {
 				// Assume strict mode and throw for failed assignment
 				throw new TypeError(
-					`'set' on proxy: trap returned falsish for property '${toString(
+					`'set' on proxy: trap returned falsish for property '${safeToString(
 						propName
 					)}'`
 				)
@@ -545,6 +732,32 @@ export function set(
 	} else {
 		return ((obj as any)[propName] = value)
 	}
+}
+
+function fallbackSet(
+	obj: PossiblyProxy,
+	property: unknown,
+	value: unknown,
+	warn: boolean
+): unknown {
+	// This function is called if, for some reason, some part of the end result application
+	// ends up doing `proxy.foo = bar` directly, at which point something has already failed
+	// because all of those statements should've been transformed to _proxyfillRuntime$set calls.
+
+	if (
+		warn &&
+		typeof console !== 'undefined' &&
+		typeof console.warn === 'function'
+	) {
+		console.warn(
+			new Error(
+				`Getter ${safeToString(
+					property
+				)} called directly without going through _proxyfillRuntime$set`
+			)
+		)
+	}
+	return set(obj, property, value)
 }
 
 export function updateProperty(
@@ -618,6 +831,8 @@ const ProxyPolyfill: IProxy = function Proxy(
 	target: object,
 	handler: ProxyHandler<object>
 ) {
+	/* Proxy polyfill by library proxyfill */
+
 	const isCalledWithNew = !!this && this instanceof Proxy
 	if (!isCalledWithNew) {
 		throw new TypeError("Constructor Proxy requires 'new'")
