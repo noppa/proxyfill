@@ -49,7 +49,7 @@ describe('proxyfill runtime', () => {
 			expect(args).toEqual([obj, '24', 52, expect.any(Object)])
 		})
 
-		it('should work with nested Proxies', () => {
+		fit('should work with nested Proxies', () => {
 			const proxy = new Proxy(
 				new Proxy(
 					{},

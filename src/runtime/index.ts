@@ -365,6 +365,7 @@ function createProxy(
 		isFn: false,
 		isArr: false,
 	}
+	const privateApiKey: keyof ProxyPrivateApiContainer = '__proxyfill'
 
 	let proxy: ProxyPrivateApiContainer
 	if (typeof target === 'function') {
@@ -424,6 +425,13 @@ function createProxy(
 	// new properties being added), but we'll try our best.
 
 	if (privateApi.isArr) {
+		const proxyAsArr = proxy as ProxyPrivateApiContainer & Array<any>
+		// Given an array like [1, 2, 3, 4, 5, 6], we set getter-setter traps to
+		// a few first items and to the last item, like so:
+		// [<g&s>, <g&s>, <g&s>, <empty>, <empty>, <g&s>]
+		// so that if somehow some non-"proxyfilled" code gets to do arr[i] directly
+		// withoug going through __proxyfillRuntime$get, we can try to catch it anyway.
+		updateMirroredArrayEntries(proxyAsArr)
 		// For arrays, we don't copy all the items because that could be very memory-heavy
 		// for large arrays. Just copy a few and try to detect iteration. This is very
 		// hacky and brittle, but it's the best we can do here. Again, this should not even
@@ -437,12 +445,13 @@ function createProxy(
 				continue
 			}
 			if (typeof arrayProto[prop] === 'function') {
-				setArrayMethodTrap(proxy as ProxyPrivateApiContainer & Array<any>, prop)
+				setArrayMethodTrap(proxyAsArr, prop)
 			}
 		}
 	} else if (!privateApi.isFn) {
 		for (let i = 0, n = allOwnProperties.length; i < n; i++) {
 			const prop = allOwnProperties[i]
+			if (prop === privateApiKey) continue
 			const descr = Object$getOwnPropertyDescriptor(target, prop)
 			setPropertyTrap(proxy, prop, descr, /* warn: */ true)
 		}
@@ -482,8 +491,6 @@ function createProxy(
 		setPropertyTrap(proxy, trap, undefined, false)
 	}
 
-	const privateApiKey: keyof ProxyPrivateApiContainer = '__proxyfill'
-
 	// Set the actual __proxyfill private api, which will be used by __proxyfillRuntime API
 	getNativeApi(getObject, 'defineProperty')(proxy, privateApiKey, {
 		writable: false,
@@ -495,7 +502,11 @@ function createProxy(
 	return proxy
 }
 
+let maxWarningsLeft = 10
+
 function logWarning(msg: string | Error) {
+	if (!maxWarningsLeft) return
+	maxWarningsLeft--
 	if (typeof console !== 'undefined' && typeof console.warn === 'function') {
 		console.warn(msg)
 	}
@@ -635,6 +646,10 @@ function normalizeProperty(propertyName: any): string | symbol {
 }
 
 export function get(obj: PossiblyProxy, property: unknown): unknown {
+	// This function is the result of compiling a normal property access, i.e. foo.bar or
+	// arr[i] to _proxyfillRuntime$get(foo, 'bar') or _proxyfillRuntime$get(arr, i)
+	// so that we can handle the property access properly if the target object is a proxy.
+
 	const propName = normalizeProperty(property)
 
 	// Some standard lib functions, like {}.hasOwnPrototype, defineProperty, etc
@@ -690,6 +705,12 @@ function fallbackGet(
 	return get(obj, property)
 }
 
+/**
+ * Basically the same as get, except immediatedly calls the method
+ * so that we get the `this` context right. Note that this does NOT
+ * do special handling for the "apply" trap, since that is handled
+ * by the function-proxy created in createProxy.
+ */
 export function invoke(
 	obj: PossiblyProxy,
 	property: string | symbol | unknown,

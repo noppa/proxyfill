@@ -134,6 +134,16 @@ describe('runtime behavior of generated code', () => {
 				return [++proxy.foo, calledWith, obj.foo, proxy.foo--, obj.foo]
 			})
 		)
+		it(
+			'should call proxy function through proxy.apply',
+			mkTest({context: {a: 1}, arg1: 2}, () => {
+				function fn(this: any, arg1: number) {
+					return {context: this, arg1}
+				}
+				const proxy = new Proxy(fn, {})
+				return proxy.apply({a: 1}, [2])
+			})
+		)
 	})
 	describe('polyfilled built-in functions', () => {
 		it(
