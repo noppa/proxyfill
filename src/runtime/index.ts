@@ -1,12 +1,20 @@
 /*
- * The Proxy implementation in this file is derived from
+ * The Proxy implementation was originally derived from
  * the implementation of Google's proxy-polyfill
  * https://github.com/GoogleChrome/proxy-polyfill/blob/f667dd4b25355b99a264e56d101307d50807e187/src/proxy.js
  * which is licensed under Apache License, Version 2.0.
  * https://github.com/GoogleChrome/proxy-polyfill/blob/f667dd4b25355b99a264e56d101307d50807e187/LICENSE
  *
- * Some code changes has been made to the original implementation in order to
- * fit into the code style and goals of this project.
+ * It's also taken inspiration from harmony-reflect shim for Reflect and Proxy, by
+ * Software Languages Lab, Vrije Universiteit Brussel and Tom Van Cutsem
+ * https://github.com/tvcutsem/harmony-reflect/blob/e34ed05a61c49b14aa494c954f304672e10a432f/reflect.js
+ * which is dual-licensed under the Apache License 2.0 or MPL 1.1
+ * https://github.com/tvcutsem/harmony-reflect/blob/e34ed05a61c49b14aa494c954f304672e10a432f/LICENSE
+ *
+ * The code has since diverged a lot from the original implementation in order to
+ * fit into the code style and goals of this project. However, some implementation details,
+ * variable names and patterns may still remain similar to the ones in above two projects.
+ *
  */
 
 import {assertNotPrivateApiProp} from './assertNotPrivateApiProp'
